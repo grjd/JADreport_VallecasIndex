@@ -1,0 +1,553 @@
+%% This is file `elsarticle-template-1-num.tex',
+%%
+%% Copyright 2009 Elsevier Ltd
+%%
+%% This file is part of the 'Elsarticle Bundle'.
+%% ---------------------------------------------
+%%
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%%
+%% The list of all files belonging to the 'Elsarticle Bundle' is
+%% given in the file `manifest.txt'.
+%%
+%% Template article for Elsevier's document class `elsarticle'
+%% with numbered style bibliographic references
+%%
+%% $Id: elsarticle-template-1-num.tex 149 2009-10-08 05:01:15Z rishi $
+%% $URL: http://lenova.river-valley.com/svn/elsbst/trunk/elsarticle-template-1-num.tex $
+%%
+\documentclass[preprint,12pt]{elsarticle}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+%% Use the option review to obtain double line spacing
+%% \documentclass[preprint,review,12pt]{elsarticle}
+
+%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
+%% for a journal layout:
+%% \documentclass[final,1p,times]{elsarticle}
+%% \documentclass[final,1p,times,twocolumn]{elsarticle}
+%% \documentclass[final,3p,times]{elsarticle}
+%% \documentclass[final,3p,times,twocolumn]{elsarticle}
+%% \documentclass[final,5p,times]{elsarticle}
+%% \documentclass[final,5p,times,twocolumn]{elsarticle}
+
+%% if you use PostScript figures in your article
+%% use the graphics package for simple commands
+%% \usepackage{graphics}
+%% or use the graphicx package for more complicated commands
+%% \usepackage{graphicx}
+%% or use the epsfig package if you prefer to use the old commands
+%% \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{amssymb}
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers after \end{frontmatter}.
+\usepackage{lineno}
+
+%% natbib.sty is loaded by default. However, natbib options can be
+%% provided with \biboptions{...} command. Following options are
+%% valid:
+
+%%   round  -  round parentheses are used (default)
+%%   square -  square brackets are used   [option]
+%%   curly  -  curly braces are used      {option}
+%%   angle  -  angle brackets are used    <option>
+%%   semicolon  -  multiple citations separated by semi-colon
+%%   colon  - same as semicolon, an earlier confusion
+%%   comma  -  separated by comma
+%%   numbers-  selects numerical citations
+%%   super  -  numerical citations as superscripts
+%%   sort   -  sorts multiple citations according to order in ref. list
+%%   sort&compress   -  like sort, but also compresses numerical citations
+%%   compress - compresses without sorting
+%%
+%% \biboptions{comma,round}
+
+% \biboptions{}
+
+
+\journal{Journal of Alzheimer’s Disease Reports}
+
+\begin{document}
+
+\begin{frontmatter}
+
+%% Title, authors and addresses
+
+%% use the tnoteref command within \title for footnotes;
+%% use the tnotetext command for the associated footnote;
+%% use the fnref command within \author or \address for footnotes;
+%% use the fntext command for the associated footnote;
+%% use the corref command within \author for corresponding author footnotes;
+%% use the cortext command for the associated footnote;
+%% use the ead command for the email address,
+%% and the form \ead[url] for the home page:
+%%
+%% \title{Title\tnoteref{label1}}
+%% \tnotetext[label1]{}
+%% \author{Name\corref{cor1}\fnref{label2}}
+%% \ead{email address}
+%% \ead[url]{home page}
+%% \fntext[label2]{}
+%% \cortext[cor1]{}
+%% \address{Address\fnref{label3}}
+%% \fntext[label3]{}
+
+\title{Feature Selection in the Vallecas Index}
+
+%% use optional labels to link authors explicitly to addresses:
+%% \author[label1,label2]{<author name>}
+%% \address[label1]{<address>}
+%% \address[label2]{<address>}
+
+\author{Jaime Gómez-Ramírez}
+\author{Marina Ávila-Villanueva}
+\author{Miguel Ángel Fernández-Blázquez}
+
+\address{Fundaci\'on Reina Sof\'ia \\     Centre for Research in Neurodegenarative Diseases (Fundaci\'on CIEN) \\ \emph{Valderrebollo, 5, 28031 Madrid, Spain}}
+
+
+\begin{abstract}
+
+\end{abstract}
+
+\begin{keyword}
+Mild cognitive impairment \sep  Alzheimer's disease \sep Subjective cognitive decline \sep Machine learning \sep Random forest \sep Feature importance
+%% keywords here, in the form: keyword \sep keyword
+
+%% MSC codes here, in the form: \MSC code \sep code
+%% or \MSC[2008] code \sep code (2000 is the default)
+
+\end{keyword}
+
+\end{frontmatter}
+
+%%
+%% Start line numbering here if you want
+%%
+\linenumbers
+
+%% main text
+\section{Introduction}
+\label{se:intro}
+
+Mild cognitive impairment (MCI) is an intermediary stage between the expected decline of normal aging and the pathological decline associated to dementia. The MCI type associated with memory loss is called amnesic MCI. In non-amnesic MCI, memory function is not compromised but other cognitive abilities, e.g. language, executive functioning or spatial navigation skills, are impaired. MCI cases, compared with cognitively normal cases, have a higher risk of progressing to dementia \cite{flicker1991mild}, \cite{petersen1999mild}, \cite{bruscoli2004mci}, \cite{buratti2015markers}, \cite{michaud2017risk}.  
+    
+Although the diagnosis of MCI has prognostic value, the value is intrinsically linked to the time of the diagnosis. Early detection of MCI is preferred to late detection of MCI. 
+
+The unfulfilled promise of disease-modifying therapies for Alzheimer disease suffers from the lack of a theory of aging able to explain the dynamic progression of both normal and pathological aging \cite{cerella1985information}, \cite{sleimen2014aging}. %, \cite{https://link.springer.com/article/10.1007/s10522-015-9584-x}
+%jere my english https://www.quantamagazine.org/first-support-for-a-physics-theory-of-life-20170726/
+
+There is not only a concern with the early detection of cognitive decline symptoms, t¡it is also important to understand the stability in time of the MCI diagnosis \cite{}. The \emph{yo-yo effect} refers to fluctuations between normal and MCI diagnosis observed for the same person. The variability in symptoms may lead to spurious diagnosis, the physician or neuropsychologist may diagnose a person with MCI and later in the future retract the diagnosis \cite{https://www.ncbi.nlm.nih.gov/pubmed/24353338}. 
+
+In order to better understand this variability we need to take into account a number of factors that may have an observable effect in the cognitive performance. MCI is, in the end, a clinical description based on performance on a test of memory and thinking skills. The capacity to perform well on a test can be affected by life style conditions. For example, a person going through stressful events, sleep deprived or with poor diet may have worsening memory test scores compared to previous occasions with more favorable circumstances \cite{http://learnmem.cshlp.org/content/22/4/197.full}, \cite{https://www.ncbi.nlm.nih.gov/pubmed/30076274}, \cite{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950232/} , \cite{Daily stressors and memory failures in a naturalistic setting: Findings from the va normative aging study.}.
+
+Testing memory and thinking skills in regular basis, rather than in the occasion of the appearance of memory losses in a large population might help us understand the role played by fluctuations between normal and MCI conditions in the risk of later developing dementia. There is no an iron law of progression form normal to MCI to dementia, some people with MCI never get worse, and a few eventually get better \cite{MA}. 
+
+The systematic examination, via for example cognitive testing, brain imaging techniques or gene expression profiling, of a very large of pool subjects is in all cases extremely costly. Prior to or in addition to such an effort it is worth collecting variables that can be directly assessed by the participant herself, such as life style, demographic, diet, sleep patterns or subjective memory complaints. 
+
+In this work we use the dataset collected in \emph{The Vallecas Project}, the most ambitious longitudinal population-based study for healthy aging in Spain. 
+\emph{The Vallecas Project} dataset includes information about a wide range of factors including magnetic resonance imaging, genetic, demographic, socioeconomic, cognitive performance, subjective memory complains, neuropsychiatric disorders, cardiovascular, sleep, diet, physical exercise and self assessed quality of life. The subjects in each visit were diagnosed as healthy, mild cognitive impairment (MCI) or dementia.
+
+We select only the subset of features that can be self assessed by the participants and within this set, we study the most important features for MCI conversion. This set of ranked variables define the \emph{Vallecas Index}.
+
+The rationale and motivation behind the \emph{Vallecas Index} is twofold. First, reduce the complexity of the problem at hand in order to gain in interpretability. The \emph{Vallecas Project} dataset has thousands of variables and having irrelevant features can decrease the accuracy of the model. Furthermore, it is not enough having a model that provides accurate predictions, being able to interpret the predictions made is essential, in particular in a clinical domain.
+% especially linear algorithms like linear and logistic regression. 
+Second, by detecting life style and other self assessed features related to MCI conversion, it is possible to provide recommendations and to suggest healthy-aging effective choices.
+
+Feature importance is the most useful interpretation tool, and data scientists regularly examine model parameters (such as the coefficients of linear models), to identify important features. 
+
+
+
+%The main objective of the Vallecas Project is to elucidate, through tracking of progression of the cohort, the best combination of features, clinical and others that are informative about developing cognitive impairment in the future.
+
+
+\section{Materials and Methods}
+\label{S:2}
+
+
+
+
+
+
+%https://www.wildcardconsulting.dk/never-do-this-mistake-when-using-feature-selection/
+Feature selection is a powerful way of reducing the complexity of a machine learning or statistical model
+%f you perform feature selection on all of the data and then cross-validate, then the test data in each fold of the cross-validation procedure was also used to choose the features and this is what biases the performance analysis. %biased estimator is the one where feature selection is performed prior to cross-validation, the unbiased estimator is the one where feature selection is performed independently in each fold of the cross-validation
+\subsection{How much training data do you need?}
+%https://medium.com/@malay.haldar/how-much-training-data-do-you-need-da8ec091e956
+%https://towardsdatascience.com/how-do-you-know-you-have-enough-training-data-ad9b1fd679ee
+How much training data do you need?
+The correct answer is: it depends. It depends on the task you are trying to perform, the performance you want to achieve, the input features you have, the noise in the training data, the noise in your extracted features, the complexity of your model and so on. So the way to find out the interaction of all these variables is to train your model on varying amounts of training data and plot learning curves.But this requires you to already have some decent amount of training data to construct interesting plots
+
+First, automatically generate a lot of logistic regression problems. The first observation is that the f-score curves don’t vary as the parameters scale. This is expected given the models are linear and it’s good to see that some hidden non-linearity doesn’t creep in.The second observation is that when the ratio of training samples to model parameters is 10:1, the f-score lands in the vicinity of 0.85 which we take as the definition of a well performing model.
+%https://github.com/Malay-Haldar/Tensorflow-Projects/blob/master/training_data_exploration.py
+This leads us to the rule of 10, namely the amount of training data you need for a well performing model is 10x the number of parameters in the model.The rule of 10 transforms the problem of estimating the amount of training data required to knowing the number of parameters in the model.For linear models such as logistic regression, the number of parameters equal the number of input features since the model assigns a parameter corresponding to each feature. However there are complications:
+\begin{itemize}
+	\item features may be sparse, so counting the number of features may not be straightforward.
+	\item Due to regularization and feature selection techniques a lot of features may be discarded
+\end{itemize}
+
+Neural networks pose a different set of problems than linear models like logistic regression. The problem is the relationship between the parameters in a neural network is no longer linear, so the empirical study we did based on logistic regression doesn’t really apply anymore. In such cases you can treat the rule of 10 as a lower bound to the amount of training data needed.
+the rule of 10 seem to work across a wide range of problems, including shallow neural nets. 
+
+In statistics, the one in ten rule is a rule of thumb for how many predictor parameters can be estimated from data when doing regression analysis while keeping the risk of overfitting low. 
+
+The rule states that one predictive variable can be studied for every ten events and an event is the size of the smallest class. For example, if a sample of 200 patients are studied and 20 patients die during the study (so that 180 patients survive), then 2 pre-specified predictors can reliably be fitted to the total data (2 to 20 points in the minority class). Similarly, if 100 patients die during the study, then 10  pre-specified predictors can be fitted reliably. The more element sin the minority cass the more predictors I need. Thus, for the Vallecas dataset (if we were doing regression analysis) 1000 in year 1, with $10\%$ converters to MCI or 100 the index should be around 10.
+
+More restrictive, that is less parameters, rules are the "one in 20 rule", indicating the need for shrinkage of regression coefficients, and a "one in 50 rule" for stepwise selection with the default p-value of $5\%$.
+Other studies, however, show that the one in ten rule may be too conservative as a general recommendation and that five to nine events per predictor can be enough, depending on the research question. Thus for 5 to 1 in the Vallecas we will be talking about 20 parameters.
+
+More recently, a study has shown that the ratio of events per predictive variable is not a reliable statistic for estimating the minimum number of events for estimating a logistic prediction model.[8] Instead, the number of predictor variables, the total sample size (events + non-events) and the events fraction (events / total sample size) can be used to calculate the expected prediction error of the model that is to be developed \cite{van2018sample}. One can then estimate the required sample size to achieve a expected prediction error that is smaller than a predetermined allowable prediction error value.
+
+Alternatively, three requirements for prediction model estimation have been suggested: the model should have a global shrinkage factor of $ \geq.9$, an absolute difference of $\leq .05$ in the model's apparent and adjusted Nagelkerke R2, and a precise estimation of the overall risk or rate in the target population.[10] The necessary sample size and number of events for model development are then given by the values that meet these requirements.
+
+%https://petewarden.com/2017/12/14/how-many-images-do-you-need-to-train-a-neural-network/
+In Computer Vision: For image classification using deep learning, a rule of thumb is 1,000 images per class,
+
+% power and saple sze
+%http://sphweb.bumc.bu.edu/otlt/MPH-Modules/BS/BS704_Power/BS704_Power_print.html
+
+The Vapnik-Chevronenkis (VC) dimension is a measure of the complexity of a model; the more complex the model, the higher its VC dimension. Thus we can specify the training data size in terms of the VC dimension.
+VC dimension is the cardinality of the largest set of points that the algorithm can shatter. 
+
+The VC of the linear classifier is precisely 3 because we can find examples of 4 points that can NOT be accurately separated by a line. It turns out that the training data size, N, is a function of VC. The amount of data needed for learning depends on the complexity of the model. A side effect of this is the well-known voracity of neural networks for training data, given their significant complexity \cite{juba2019precision}
+
+The Estimation of training data size (N) from the VC dimension is
+\begin{equation}
+N = F\frac{VC + \log(1/d)}{\epsilon}
+\end{equation}
+where d is the probability of failure and epsilon is the learning error
+
+A Methodology to Determine Training Data Size in Classification:  learning curve, which in general is a plot of error versus training data size. In classification, we typically use a slightly different form of the learning curve; it is a plot of classification accuracy versus training data size. he methodology for determining training data size is straightforward: Determine the exact form of the learning curve for your domain, and then, simply find the corresponding point on the plot for your desired classification accuracy. 
+
+No imbalance-correcting technique (under-sampling, over-sampling and ensemble learning) can match adding more training data when it comes to measuring precision and recall.
+%https://www.dataquest.io/blog/learning-curves-machine-learning/
+Learning curves:
+
+
+
+% \begin{table}[h]
+% \centering
+% \begin{tabular}{l l l}
+% \hline
+% \textbf{Treatments} & \textbf{Response 1} & \textbf{Response 2}\\
+% \hline
+% Treatment 1 & 0.0003262 & 0.562 \\
+% Treatment 2 & 0.0015681 & 0.910 \\
+% Treatment 3 & 0.0009271 & 0.296 \\
+% \hline
+% \end{tabular}
+% \caption{Table caption}
+% \end{table}
+
+\subsection{Feature Selection}
+%https://forums.fast.ai/t/feature-importance-of-random-forest-vs-xgboost/17561
+The FA of Random Forest (Bagging Ensemble of trees) vs XGBoost (Boosting Ensemble of trees) is the same.
+%https://explained.ai/rf-importance/index.html
+The scikit-learn Random Forest feature importance and R's default Random Forest feature importance strategies are biased. To get reliable results in Python, use permutation importance
+\paragraph*{Introduction to Feature Importance}
+Training a model that accurately predicts outcomes is great, but most of the time you don't just need predictions, you want to be able to interpret your model. Feature importance is the most useful interpretation tool, and data scientists regularly examine model parameters (such as the coefficients of linear models), to identify important features. 
+
+Feature importance is available for more than just linear models. Most random Forest (RF) implementations also provide measures of feature importance.In fact, the RF importance technique we'll introduce here (permutation importance) is applicable to any model, though few machine learning practitioners seem to realize this.Permutation importance is a common, reasonably efficient, and very reliable technique. It directly measures variable importance by observing the effect on model accuracy of randomly shuffling each predictor variable.This technique is broadly-applicable because it doesn't rely on internal model parameters, such as linear regression coefficients (which are really just poor proxies for feature importance) \cite{breiman2001statistical}. 
+One of Breiman's issues involves the accuracy of models. The more accurate our model, the more we can trust the importance measures and other interpretations. . Measuring linear model goodness-of-fit is typically a matter of residual analysis. The problem is that residual analysis does not always tell us when the model is biased. Breiman quotes William Cleveland, “one of the fathers of residual analysis,” as saying residual analysis is an unreliable goodness-of-fit measure beyond four or five variables. 
+the mean decrease in impurity (or gini importance). The mean decrease in impurity importance of a feature is computed by measuring how effective the feature is at reducing uncertainty (classifiers) or variance (regressors) when creating decision trees within RFs.  The problem is that this mechanism, while fast, does not always give an accurate picture of importance. this common mechanism for computing feature importance is biased; i.e. it tends to inflate the importance of continuous or high-cardinality categorical variables. “the variable importance measures of Breiman's original Random Forest method ... are not reliable in situations where potential predictor variables vary in their scale of measurement or their number of categories.” \cite{strobl2007bias}. Strobl et al show that “permutation importance over-estimates the importance of correlated predictor variables.”
+
+Breiman and Cutler also described permutation importance. The importance of a feature is the difference between the baseline and the drop in overall accuracy or R2 caused by permuting the column.  The permutation mechanism is much more computationally expensive than the mean decrease in impurity mechanism, but the results are more reliable.
+Any machine learning model can use the strategy of permuting columns to compute feature importances. 
+This fact is under-appreciated in academia and industry. 
+The advantage of Random Forests, of course, is that they provide OOB samples by construction so users don't have to extract their own validation set and pass it to the feature importance function. 
+The importance value of a feature is the difference between the baseline and the score from the model missing that feature. 
+The risk is a potential bias towards correlated predictive variables. 
+If we ignore the computation cost of retraining the model, we can get the most accurate feature importance using a brute force drop-column importance mechanism. The idea is to get a baseline performance score as with permutation importance but then drop a column entirely, retrain the model, and recompute the performance score. If we had infinite computing power, the drop-column mechanism would be the default for all RF implementations because it gives us a “ground truth” for feature importance. The importance values could be different between the two strategies, but the order of feature importances should be roughly the same. 
+
+
+
+You learned about 4 different automatic feature selection techniques:  univariate selection, Recursive Feature Elimination, PCA and Feature Information.
+%https://machinelearningmastery.com/feature-selection-machine-learning-python/
+Feature selection is a process where you automatically select those features in your data that contribute most to the prediction variable or output in which you are interested.
+Having irrelevant features in your data can decrease the accuracy of many models, especially linear algorithms like linear and logistic regression.
+Three benefits of performing feature selection before modeling your data are:
+\begin{itemize}
+\item reduce overfitting
+\item improves Accuracy
+\item reduces training time
+
+\end{itemize}
+
+%scikit-learn.org/stable/modules/feature_selection.html
+%The classes in the sklearn.feature_selection module can be used for feature selection/dimensionality reduction on sample sets, either to improve estimators’ accuracy scores or to boost their performance on very high-dimensional datasets.
+
+
+Univariate Selection (Statistical tests) d:  SelectKBest(score func=chi2, k=4)
+
+Recursive Feature Elimination: works by recursively removing attributes and building a model on those attributes that remain. For example, use RFE with the logistic regression algorithm to select the top 3 features. The choice of algorithm does not matter too much as long as it is skillful and consistent.
+%scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html#sklearn.feature_selection.RFE
+
+Principal Component Analysis:  a data reduction technique. You can choose the number of dimensions or principal component in the transformed result.
+
+Feature Importance: Bagged decision trees like Random Forest and Extra Trees can be used to estimate the importance of features. (ExtraTreesClassifier)
+
+%https://medium.com/data-science-journal/how-to-measure-feature-importance-in-a-binary-classification-model-d284b8c9a301
+Training a model on such a huge table (all the features) is not a good idea. You really run the risk of collinearity (i.e. correlations between variables). So we have to choose the best set of variables to use in order to make our model learn properly.
+Our goal is to increase the predictive power of our model against our binary target, so we must find those variables that are strongly correlated with it. Remember: information is hidden inside the dataset and we must provide all the necessary conditions to make our model extract it. So we have to prepare data before the training phase in order to make the model work properly.
+Pearson correlation coefficient is not flawless, however. It only measures linear correlation and our variables couldn’t be linearly correlated. For the categorical variables, there’s no Pearson correlation coefficient, but we can use another great discovery of Pearson, which is the chi-square test.
+
+
+\section{Materials and Methods}
+\label{S:2}
+%https://towardsdatascience.com/feature-engineering-using-machine-learning-on-large-financial-datasets-8584dacd3a4d
+Feature Important using random forests: data cleaning to remove the non essential data which doesn’t contribute in any meaningful way to our target feature.
+%https://towardsdatascience.com/feature-selection-with-pandas-e3690ad8504b
+%https://sebastianraschka.com/faq/docs/feature_sele_categories.html
+Feature selection can be done in multiple ways but there are broadly 3 categories of it: filter, warapper and embedded. Filter method not taking the relationship between feature variables or feature and target variables into account
+Wrapper methods measure the “usefulness” of features based on the classifier performance. In contrast, the filter methods pick up the intrinsic properties of the features (i.e., the “relevance” of the features) measured via univariate statistics instead of cross-validation performance. So, wrapper methods are essentially solving the “real” problem (optimizing the classifier performance), but they are also computationally more expensive compared to filter methods due to the repeated learning steps and cross-validation. Embedded methods, are quite similar to wrapper methods since they are also used to optimize the objective function or performance of a learning algorithm or model. The difference to wrapper methods is that an intrinsic model building metric is used during learning
+
+Filter methods: information gain, chi-square test, fisher score, correlation coefficient, variance threshold (compute the variance of each feature, and we select the subset of features based on a user-specified threshold. E.g., “keep all features that have a variance greater or equal to x”). We assume that features with a higher variance may contain more useful information, but note that we are not taking the relationship between feature variables or feature and target variables into account, which is one of the drawbacks of filter methods.
+Wrapper: RFE, GA
+Embedded: LASSO regularization, decision tree.
+
+
+Filtering uses Pearson or other correlation measures.  One of the assumptions of linear regression is that the independent variables need to be uncorrelated with each other. If these variables are correlated with each other, then we need to keep only one of them and drop the rest. 
+Warapper method needs one machine learning algorithm and uses its performance as evaluation criteria:  you feed the features to the selected Machine Learning algorithm and based on the model performance you add/remove the features.There are different wrapper methods such as Backward Elimination, Forward Selection, Bidirectional Elimination and RFE.
+
+%paso de backward do RFE
+Backward Elimination: we feed all the possible features to the model at first. We check the performance of the model (eg OLS) and then iteratively remove the worst performing features one by one till the overall performance of the model comes in acceptable range. The performance metric used here to evaluate feature performance is pvalue. If the pvalue is above 0.05 then we remove the feature, else we keep it.
+
+RFE (Recursive Feature Elimination): uses accuracy metric to rank the feature according to their importance. The RFE method takes the model to be used and the number of required features as input (eg LinearRegression model with 7 features ).Now we need to find the optimum number of features, for which the accuracy is the highest. We do that by using loop starting with 1 feature and going up to M total features. We then take the one for which the accuracy is highest. We finally get the optimum number of features with the score for the optimal number of features.
+Sequential Feature Selection: greedy search algorithm that attempts to find the “optimal” feature subset by iteratively selecting features based on the classifier performance. We start with an empty feature subset and add one feature at the time in each round (more expensive than a filter approach such as the variance threshold)
+
+Embedded: Regularization, If the feature is irrelevant, lasso penalizes it’s coefficient and make it 0. L1 (or LASSO) regression for generalized linear models can be understood as adding a penalty against complexity to reduce the degree of overfitting or variance of a model by adding more bias. We add a penalty term directly to the cost function, regularized cost = cost + regularization penalty. we can induce sparsity through this L1 vector norm
+
+
+(PCA is feature extraction it maps features into a new feature space)
+
+
+\section{Results}
+\label{S:3}
+
+\textbf{Univariate feature selection} works by selecting the best features based on univariate statistical tests. We use SelectKBest removes all but the highest scoring features
+%The methods based on F-test estimate the degree of linear dependency between two random variables. On the other hand, mutual information methods can capture any kind of statistical dependency, but being nonparametric, they require more samples for accurate estimation.
+
+SelectKBEST (14)
+
+Chi2
+%('Top features:', Index([u'renta', u'ejminut', u'scd_visita1', u'apoe', u'sdvive', u'tir',u'a13', u'aldulc', u'eqm10_visita1', u'sue_hor', u'eqm83_visita1',u'imc', u'peso', u'relaamigo'],
+      
+
+Anova 
+%([u'a13', u'eqm10_visita1', u'apoe', u'scd_visita1', u'eqm83_visita1',u'aldulc', u'sdvive', u'imc', u'relaamigo', u'eq5dsalud_visita1',u'a08', u'sdresid', u'a14', u'a01'],
+
+MI 
+%([u'ansi', u'tce', u'nivel_educativo', u'alpeszul', u'allact',u'familial_ad', u'sue_hor', u'talla', u'pabd', u'alverd', u'sdeconom',u'a04', u'nivelrenta', u'eqm83_visita1']
+
+Figure of SelectKBest $k=14$ for the 10:1 rule, using different statistical tests to study the importance of the features: ANOVA \ref{fig:HeatmapTopF_f_classif-b}, Chi2 \ref{fig:HeatmapF_chi2-b} and MI \ref{fig:HeatmapTopF_mutual_info_classif-b}.
+In the axis are shown the 14 features selected using univariate Feature Selection method. Previously the features with low variance $<(80\%)$ were removed.
+%REMOVED for low var u'sdhijos', u'act_orie_visita1', u'act_prax_visita1',u'act_ejec_visita1', u'act_comp_visita1', u'act_visu_visita1',u'eqm84_visita1', u'eqm86_visita1', u'eq5dmov_visita1'],
+
+\begin{figure}[!htb]
+        \centering
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/HeatmapTopF_chi2}
+        \caption{Heatmap of Pearson's correlation for features selected with the Chi2 test SelectKBest \cite{scikit-learn} (only a correlation larger than +-.15 shown)..} 
+        \label{fig:HeatmapF_chi2-b}
+\end{figure}
+
+\begin{figure}[!htb]
+        \centering
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/HeatmapTopF_f_classif}
+        \caption{Heatmap of Pearson's correlation for features selected with the ANOVA test SelectKBest \cite{scikit-learn} (only a correlation larger than +-.15 shown)..} 
+        \label{fig:HeatmapTopF_f_classif-b}
+\end{figure}
+
+\begin{figure}[!htb]
+        \centering
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/HeatmapTopF_mutual_info_classif}
+        \caption{Heatmap of Pearson's correlation for features selected with the Mutual Information test SelectKBest \cite{scikit-learn} (only a correlation larger than +-.15 shown)..} 
+        \label{fig:HeatmapTopF_mutual_info_classif-b}
+\end{figure}
+
+
+
+
+% \begin{figure}[!htb]
+%     \centering
+%     \begin{minipage}{.45\textwidth}
+%         \centering
+%         \includegraphics[height=0.5\textheight, keepaspectratio]{figures/HeatmapF_chi2} %height=0.15\textheight
+%         %\caption{Brain atrophy for converters and non converters grouped by sex.}
+%         \label{fig:HeatmapF_chi2-a}
+%     \end{minipage}%
+%     \hfill
+%     \begin{minipage}{0.45\textwidth}
+%         \centering
+%         \includegraphics[height=0.5\textheight, keepaspectratio]{figures/HeatmapTopF_chi2}
+%         %\caption{Brain atrophy for converters and non converters grouped by familial AD.}
+%         \label{fig:HeatmapF_chi2-b}
+%     \end{minipage}
+%     \caption{On the left, Heatmap of Pearson's correlation for features selected with the Chi2 test SelectKBest \cite{scikit-learn} (only a correlation larget than +-.15 shown).}
+%     \label{fig:KBestChi2}
+% \end{figure}
+
+\textbf{Wrapper:Recursive feature elimination}
+
+Maximizing SVC (C=1 or 0.01) by accuracy does not make sense, I get Optimal number of features : 1!!
+
+%Given an external estimator that assigns weights to features (e.g., the coefficients of a linear model), recursive feature elimination (RFE) is to select features by recursively considering smaller and smaller sets of features. First, the estimator is trained on the initial set of features and the importance of each feature is obtained either through a coef attribute or through a feature_importances_ attribute. Then, the least important features are pruned from current set of features.That procedure is recursively repeated on the pruned set until the desired number of features to select is eventually reached.
+RFECV performs RFE in a cross-validation loop to find the optimal number of features
+
+
+\textbf{Embedded method:Random forest}
+
+%https://stats.stackexchange.com/questions/36165/does-the-optimal-number-of-trees-in-a-random-forest-depend-on-the-number-of-pred
+%Random forests does not overfit. You can run as many trees as you want https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#remarks
+%https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+The importance of a feature is computed as the (normalized) total reduction of the criterion brought by that feature. It is also known as the Gini importance \cite{breiman2017classification}.
+Figure \ref{fig:RF_selectorgini} shows the 14 most informative features according to the Gini criterion.
+
+\begin{figure}[!htb]
+        \centering
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/RF_selectorgini}
+        \caption{Evaluation of the importance of features for conversion to MCI classification. The red bars are the feature importances of the forest, along with their inter-trees variability. The 14 features most informative are displayed in the x-axis, the y-axis shows the Gini coefficient.} 
+        \label{fig:RF_selectorgini}
+\end{figure}
+
+\section{Discussion}
+\label{S:4}
+%https://www.analyticsvidhya.com/blog/2016/12/introduction-to-feature-selection-methods-with-an-example-or-how-to-select-the-right-variables/
+Machine learning works on a simple rule – if you put garbage in, you will only get garbage to come out. By garbage here, I mean noise in data.
+
+This becomes even more important when the number of features are very large. You need not use every feature at your disposal for creating an algorithm. You can assist your algorithm by feeding in only those features that are really important. 
+Top reasons to use feature selection are:
+
+    It enables the machine learning algorithm to train faster.
+    It reduces the complexity of a model and makes it easier to interpret.
+    It improves the accuracy of a model if the right subset is chosen.
+    It reduces overfitting.
+
+Embedded methods combine the qualities’ of filter and wrapper methods. It’s implemented by algorithms that have their own built-in feature selection methods.
+Difference between Filter and Wrapper methods
+
+The main differences between the filter and wrapper methods for feature selection are:
+
+    Filter methods measure the relevance of features by their correlation with dependent variable while wrapper methods measure the usefulness of a subset of feature by actually training a model on it.
+    Filter methods are much faster compared to wrapper methods as they do not involve training the models. On the other hand, wrapper methods are computationally very expensive as well.
+    Filter methods use statistical methods for evaluation of a subset of features while wrapper methods use cross validation.
+    Filter methods might fail to find the best subset of features in many occasions but wrapper methods can always provide the best subset of features.
+    Using the subset of features from the wrapper methods make the model more prone to overfitting as compared to using subset of features from the filter methods.
+
+Not only we have improved the accuracy but by using just 20 predictors instead of 100, we have also:
+
+    increased the interpretability of the model.
+    reduced the complexity of the model.
+    reduced the training time of the model.
+
+%https://medium.com/@srnghn/the-mathematics-of-decision-trees-random-forest-and-feature-importance-in-scikit-learn-and-spark-f2861df67e3
+Decision trees learn how to best split the dataset into smaller and smaller subsets to predict the target value. The condition is represented as the “leaf” (node) and the decision as “branches” (edges). This splitting process continues until no further gain can be made or a preset rule is met, e.g. the maximum depth of the tree is reached.
+
+%ID3 creates a multi way tree each node can have two or more edges: Builds fast and short tree, Whole dataset is searched to create tree. However, Data may be over-fitted or over classified, if a small sample is tested, does not handle numeric attributes.
+
+%CART stands for Classification and Regression Trees. The algorithm creates a binary tree — each node has exactly two outgoing edges. For classification, Gini impurity or twoing criterion can be used. For regression, CART introduced variance reduction using least squares. CART can easily handle both numerical and categorical variables, identify the most significant variables and eliminate non-significant ones, handle outliers. However may have unstable decision tree.
+ 
+Feature importance is calculated as the decrease in node impurity weighted by the probability of reaching that node. The node probability can be calculated by the number of samples that reach the node, divided by the total number of samples. For each decision tree, Scikit-learn calculates a nodes importance using Gini Importance, assuming only two child nodes (binary tree).
+%https://chrisalbon.com/machine_learning/trees_and_forests/feature_selection_using_random_forest/
+Feature Selection Using Random Forest
+
+Goal: we want a way to create a model that only includes the most important features. Benefits, at least 3:
+make our model more simple to interpret. Second, we can reduce the variance of the model, and therefore overfitting. Finally, we can reduce the computational cost (and time) of training a model. The process of identifying only the most relevant features is called “feature selection.”Random Forests are often used for feature selection in a data science workflow. The reason is because the tree-based strategies used by random forests naturally ranks by how well they improve the purity of the node. This mean decrease in impurity over all trees (called gini impurity). Nodes with the greatest decrease in impurity happen at the start of the trees, while notes with the least decrease in impurity occur at the end of trees. Thus, by pruning trees below a particular node, we can create a subset of the most important features.
+\cite{breiman2001random}
+%https://datascience.stackexchange.com/questions/26283/how-can-i-fit-categorical-data-types-for-random-forest-classification
+% to convert the categorical features into numeric attributes. A common approach is to use one-hot encoding, but that's definitely not the only option. If you have a variable with a high number of categorical levels, you should consider combining levels or using the hashing trick. Sklearn comes equipped with several approaches (check the "see also" section): One Hot Encoder and Hashing Trick
+
+
+
+
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+\appendix
+
+\section{Appendix}
+\label{se:appe}
+%https://medium.com/@cxu24/common-methods-for-feature-selection-you-should-know-2346847fdf31
+The goal of a feature selection algorithm is to find the optimal feature subset using an evaluation measure.  The choice of evaluation metric distinguish the three main strategies of feature selection algorithms: the wrapper strategy, the filter strategy, and the embedded strategy
+
+Wrapper methods train a new model for each subset and use the error rate of the model on a hold-out set to score feature subsets. Wrapper methods are subdivided into exhaustive search, heuristic search, and random search.
+Exhaustive search like BFS (Breadth First Search) enumerates all possible feature combinations, rarely used $O(2^n)$. Non-exhaustive search  saves time by cutting off branches.
+Heuristic search has SFS (Sequential Forward Selection) and SBS (Sequential Backward Selection). SFS starts from an empty set. Each time a feature x is added to the feature subset X so that the evaluation metric could be optimized. SBS, on the other hand, starts from the universal set and deletes a feature x each time. Both SFS and SBS are greedy algorithms that likely fall into the local optimum. Wrapper methods usually provide the best performing feature set for a particular type of model. However, they are very computationally intensive since for each subset a new model needs to be trained.
+
+Filter Methods: is independent of any machine learning algorithms. Instead, features are selected on the basis of their scores in various statistical tests for their correlation with the outcome variable. 
+
+Feature/Response  Cont      Categ
+Cont 			  Pearson	LDA
+Cat               Anova     Chi 
+LDA: Linear discriminant analysis is used to find a linear combination of features that characterizes or separates two or more classes (or levels) of a categorical variable
+Importantly, filter methods do not remove multicollinearity
+
+Instead of the error rate, filter methods use evaluation criteria from the intrinsic connections between features to score a feature subset. Filter methods are independent to the type of predictive model. The result of a filter would be more general than a wrapper. Common measures have four types: distance metrics, correlation, mutual information, and consistency metrics. Mutual information is more general than correlation coefficient. It quantifies the “the amount of information” obtained about one feature through the other feature. Mutual information determines how similar the joint distribution p(X, Y) is to the products of factored marginal distribution p(X)p(Y). 
+A favorite consistency metrics is chi-square, we calculate chi-square between each feature and the target. The intuition is that features that are independent to the target are uninformative.
+
+Embedded Methods
+
+In embedded techniques, the feature selection algorithm is integrated as part of the learning algorithm.The most typical embedded technique is decision tree algorithm. Decision tree algorithms select a feature in each recursive step of the tree growth process and divide the sample set into smaller subsets. The more child nodes in a subset are in the same class, the more informative the features are. The process of decision tree generation is also the process of feature selection. ID3, C4.5, and CART are all common decision tree algorithms.
+Other exemplars of this approach are the LASSO with the L1 penalty and Ridge with the L2 penalty for constructing a linear model. These two methods shrink many features to zero or almost zero.
+
+
+%https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html#sklearn.preprocessing.OneHotEncoder
+%https://medium.com/@contactsunny/label-encoder-vs-one-hot-encoder-in-machine-learning-3fc273365621
+ we can’t have text in our data if we’re going to run any kind of model on it. to convert this kind of categorical text data into model-understandable numerical data, we use the Label Encoder class.
+So all we have to do, to label encode the first column, is import the LabelEncoder class from the sklearn library, fit and transform the first column of the data, and then replace the existing text data with the new encoded data
+%from sklearn.preprocessing import LabelEncoder
+%labelencoder = LabelEncoder()
+%x[:, 0] = labelencoder.fit_transform(x[:, 0]) 0 column contains text
+%but if we transform categorical (eg country names) into number, numbers have a cardinality, but countries dont! that is there is no order implicit in countries to remove this annoyance we can use OneHotEncoder.
+%label encoding, we might confuse our model into thinking that a column has data with some kind of order or hierarchy. What one hot encoding does is, it takes a column which has categorical data, which has been label encoded, and then splits the column into multiple columns. The numbers are replaced by 1s and 0s, depending on which column has what value. In our example, we’ll get three new columns, one for each country France, Germany, and Spain. Sparsity.
+
+
+%from sklearn.preprocessing import OneHotEncoder
+%onehotencoder = OneHotEncoder(categorical_features = [0])
+%x = onehotencoder.fit_transform(x).toarray()
+
+
+
+%% References
+%%
+%% Following citation commands can be used in the body text:
+%% Usage of \cite is as follows:
+%%   \cite{key}          ==>>  [#]
+%%   \cite[chap. 2]{key} ==>>  [#, chap. 2]
+%%   \citet{key}         ==>>  Author [#]
+
+%% References with bibTeX database:
+
+\bibliographystyle{model1-num-names}
+\bibliography{../bibliography-jgr/bibliojgr.bib}
+
+%% Authors are advised to submit their bibtex database files. They are
+%% requested to list a bibtex style file in the manuscript if they do
+%% not want to use model1-num-names.bst.
+
+%% References without bibTeX database:
+
+% \begin{thebibliography}{00}
+
+%% \bibitem must have the following form:
+%%   \bibitem{key}...
+%%
+
+% \bibitem{}
+
+% \end{thebibliography}
+
+
+\end{document}
+
+%%
+%% End of file `elsarticle-template-1-num.tex'.

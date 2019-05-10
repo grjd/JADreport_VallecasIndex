@@ -23,6 +23,7 @@ import time
 import numpy as np
 import pandas as pd
 import importlib
+#importlib.reload(module)
 import sys
 import statsmodels.api as sm
 import time
@@ -46,10 +47,11 @@ def vallecas_features_dictionary(dataframe):
 	Args: None
 	Output: cluster_dict tpe is dict
 	""" 
+	# REMOVED 'nivelrenta','educrenta'
 	cluster_dict = {'Demographics':['edad_visita1','edad_visita2', 'edad_visita3', 'edad_visita4', 'edad_visita5', \
 	'edad_visita6', 'edad_visita7', 'edadinicio_visita1', 'edadinicio_visita2', 'edadinicio_visita3',\
 	'edadinicio_visita4', 'edadinicio_visita5', 'edadinicio_visita6'],'Demographics_s':\
-	['renta','nivelrenta','educrenta', 'numero_barrio','numero_distrito','sexo','nivel_educativo',\
+	['renta', 'numero_barrio','numero_distrito','sexo','nivel_educativo',\
 	'anos_escolaridad','sdestciv','sdhijos', 'numhij','sdvive','sdocupac', 'sdresid', \
 	'sdtrabaja','sdeconom','sdatrb'],'SCD':['scd_visita1', \
 	'scd_visita2', 'scd_visita3', 'scd_visita4', 'scd_visita5', 'scd_visita6', \
@@ -120,7 +122,7 @@ def vallecas_features_dictionary(dataframe):
 	'valcvida2_visita6', 'valsatvid2_visita1', 'valsatvid2_visita2', 'valsatvid2_visita3',\
 	'valsatvid2_visita4', 'valsatvid2_visita5', 'valsatvid2_visita6', 'valfelc2_visita1',\
 	'valfelc2_visita2', 'valfelc2_visita3', 'valfelc2_visita4', 'valfelc2_visita5', 'valfelc2_visita6' \
-	],'SocialEngagement_s':['relafami', 'relaamigo','relaocio_visita1','rsoled_visita1'],'PhysicalExercise_s':['ejfre', 'ejminut'], 'Diet_s':['alaceit', 'alaves', 'alcar', \
+	],'SocialEngagement_s':['relafami', 'relaamigo','relaocio_visita1','rsoled_visita1'],'PhysicalExercise_s':['ejfisicototal'], 'Diet_s':['alaceit', 'alaves', 'alcar', \
 	'aldulc', 'alemb', 'alfrut', 'alhuev', 'allact', 'alleg', 'alpan', 'alpast', 'alpesblan', 'alpeszul', \
 	'alverd','dietaglucemica', 'dietagrasa', 'dietaproteica', 'dietasaludable'],'EngagementExternalWorld_s':\
 	['a01', 'a02', 'a03', 'a04', 'a05', 'a06', 'a07', 'a08', 'a09', 'a10', 'a11', 'a12', 'a13', 'a14'],\
@@ -152,7 +154,8 @@ def vallecas_features_dictionary(dataframe):
 	return cluster_dict
 
 def encode_in_quartiles(df):
-	"""encode_in_quartiles
+	"""encode_in_quartiles: ecnode Real features  ['renta', 'pabd', 'talla', 'imc', 'peso']
+	into quartiles (4 bins)
 	Args: df
 	Output:df
 	"""
@@ -162,15 +165,16 @@ def encode_in_quartiles(df):
 	df_cut = df.copy()
 	series = df.dtypes # series[ss] == np.float64
 	num_bins = 4
-	float_f = ['renta', 'pabd', 'talla', 'imc', 'peso']
+	float_f = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal']
+
 	for ff in float_f:
 		print('Encoding in quartiles %s' %ff)
 		#enc = KBinsDiscretizer(n_bins=4, encode='ordinal', strategy=strategies[1])	
-		#del df_cut[ff]	
-		bins = pd.qcut(df[ff],num_bins)
+		#del df_cut[ff]
+		#bins = pd.qcut(df[ff],num_bins)
+		bins = pd.qcut(df[ff],num_bins, duplicates='drop')
 		labels, uniques= pd.factorize(bins, sort=True)
 		df_cut[ff] = labels
-
 	return df_cut
 
 def select_rows_all_visits(dataframe, visits):
@@ -200,6 +204,14 @@ def remove_features_lowvariance(df):
 	removed_features = df.columns[~sel.get_support()]
 	print('REMOVED Features for Low variance: ', removed_features)
 	return removed_features
+
+def remove_features_redundant(df):
+	"""remove_features_redundant
+	Output: dataframe
+	"""
+	redundant = ['nivelrenta', 'educrenta']
+	return df.drop(redundant, axis=1)
+
 
 def feature_selection_wrapping(X, y, nboffeats):
 	"""
@@ -280,11 +292,11 @@ def feature_selection_embedding(X, y, nboffeats):
 	# Random Forest
 	###############
 	# Add  random  feature
-	X['random'] = np.random.random(size=len(X))
+	#X['random'] = np.random.random(size=len(X))
 	# Drop apoe
 	X = X.drop('apoe', axis=1)
-	print('\n\nRF for Feature Selection::ExtraTreesClassifier')
-	criterion = 'gini'; n_estimators = 100000; class_weight=None #bootstrap=True, oob_score=True,  "balanced" 'entropy' 
+	print('\n\n RF for Feature Selection::ExtraTreesClassifier or RandomForestClassifier')
+	criterion = 'gini'; n_estimators = 10000; class_weight=None #bootstrap=True, oob_score=True,  "balanced" 'entropy' 
 	#https://stackoverflow.com/questions/22409855/randomforestclassifier-vs-extratreesclassifier-in-scikit-learn
 	#RandomForestClassifier vs ExtraTreesClassifier
 	forest = RandomForestClassifier(n_estimators=n_estimators, bootstrap=True, oob_score=True,criterion=criterion, class_weight=class_weight, random_state=0, n_jobs=12,verbose=2)
@@ -321,7 +333,7 @@ def feature_selection_embedding(X, y, nboffeats):
 	
 	oob_c = rfpimp.oob_classifier_accuracy(forest, X, y)
 	print('oob_classifier_accuracy == %.5f' % (oob_c))
-	n_samples = 10000
+	n_samples = 1000
 	I = rfpimp.importances(forest, X, y, n_samples=n_samples)
 	print(I)
 	viz = rfpimp.plot_importances(I)
@@ -333,6 +345,7 @@ def feature_selection_embedding(X, y, nboffeats):
 	#rf_with_permutation(forest, X, y, rfpimp.oob_classifier_accuracy)
 	pdb.set_trace()
 	print('DONE!!')
+
 def permutation_importances(rf, X_train, y_train, metric):
 	"""does not normalize the importance values, such as dividing by the standard deviation
 	https://github.com/parrt/random-forest-importances
@@ -365,13 +378,15 @@ def rf_with_permutation(rf, X_train, y_train, oob_c):
 
 
 def feature_selection_filtering(X, y, nboffeats):
-	"""feature_selection_filtering
+	"""feature_selection_filtering: SlectKBeast features
+	Args:X,y, nbof features
+	Output:None
 	"""
 	from sklearn import preprocessing
 	from sklearn.preprocessing import Imputer
 	predictors = X.columns.tolist()
 	#['f_classif', 'mutual_info_classif', 'chi2', 'f_regression', 'mutual_info_regression']
-	selector = SelectKBest(chi2, k=nboffeats).fit(X, y)
+	selector = SelectKBest(mutual_info_classif, k=nboffeats).fit(X, y)
 	# scores_ : array-like, shape=(n_features,) pvalues_ : array-like, shape=(n_features,)
 	top_indices = np.nan_to_num(selector.scores_).argsort()[-nboffeats:][::-1]
 	print("Selector {} scores:",nboffeats, selector.scores_[top_indices])
@@ -386,11 +401,12 @@ def feature_selection_filtering(X, y, nboffeats):
 	#corr =dataframe[predictors].join(y).corr()
 	corr = X.join(y).corr()
 	predictors.append('conversionmci')
-	sns.heatmap(corr[(corr >= 0.2) | (corr <= -0.2)], cmap='RdYlGn', vmax=1.10, vmin=-1.10, xticklabels=predictors, yticklabels=predictors, linewidths=0.1,annot=True,annot_kws={"size": 8}, square=True);
+	sns.heatmap(corr[(corr >= 0.1) | (corr <= -0.1)], cmap='RdYlGn', vmax=1.10, vmin=-1.10, xticklabels=predictors, yticklabels=predictors, linewidths=0.1,annot=True,annot_kws={"size": 8}, square=True);
 	plt.title(f_name + ' heatmap Pearson\'s corr')
 	plt.xticks(rotation=90)
 	plt.yticks(rotation=0)
 	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
+	
 	figname = 'HeatmapTopF_' + f_name + '.png'
 	topi = X.columns[top_indices]; 
 	#topi = topi + ['conversionmci']
@@ -401,7 +417,7 @@ def feature_selection_filtering(X, y, nboffeats):
 	corr = X[topi].join(y).corr()
 	xylabels = topi.values.tolist()
 	xylabels.append('conversionmci')
-	sns.heatmap(corr[(corr >= 0.15) | (corr <= -0.15)], cmap='RdYlGn', vmax=1.10, vmin=-1.10, xticklabels=xylabels, yticklabels=xylabels, linewidths=0.1,annot=True,annot_kws={"size": 8}, square=True);
+	sns.heatmap(corr[(corr >= 0.10) | (corr <= -0.10)], cmap='RdYlGn', vmax=1.10, vmin=-1.10, xticklabels=xylabels, yticklabels=xylabels, linewidths=0.1,annot=True,annot_kws={"size": 8}, square=True);
 	plt.title(f_name + ' Top indices heatmap Pearson\'s corr')
 	plt.xticks(rotation=90)
 	plt.yticks(rotation=0)
@@ -410,6 +426,8 @@ def feature_selection_filtering(X, y, nboffeats):
 
 def prepare_df(dataframe, pv_dict):
 	"""prepare_df
+	Args: Dataframe and dictionary
+	Output: Input X and traget y
 	"""
 	# Predictors are static feature ['Genetics_s', 'Cardiovascular_s', 'PhysicalExercise_s', 'PsychiatricHistory_s', 'Sleep_s', \
 	#'Anthropometric_s', 'Diet_s', 'SocialEngagement_s', 'TraumaticBrainInjury_s', 'Demographics_s', \
@@ -429,7 +447,7 @@ def prepare_df(dataframe, pv_dict):
 	engagement = pv_dict['EngagementExternalWorld_s']; print(np.sum(dataframe[engagement].isnull()==True))
 	diet = pv_dict['Diet_s']
 	diet = list(filter(lambda x: x not in ['alaceit', 'dietaglucemica', 'dietagrasa', 'dietaproteica', 'dietasaludable'], diet))
-	print(np.sum(dataframe[diet].isnull()==True))
+	print(np.sum(dataframe[diet].isnull()==True))	
 	phys = pv_dict['PhysicalExercise_s']; print(np.sum(dataframe[social].isnull()==True))
 	cardio = pv_dict['Cardiovascular_s']
 	cardio = list(filter(lambda x: x not in ['hta_ini', 'sp', 'tabac_fin', 'tabac_cant', 'tabac_ini', 'cor_ini','arri_ini', 'card_ini','ictus_ini','ictus_num','ictus_secu'], cardio))
@@ -459,6 +477,7 @@ def prepare_df(dataframe, pv_dict):
 	# remove features with low variance
 	lowvar_features = remove_features_lowvariance(dataframe[predictors])
 	predictors = [elem for elem in predictors if elem not in lowvar_features]
+
 	X = dataframe[predictors][atleast2visits]
 	y = dataframe[target][atleast2visits]
 	#for sklearn to recognize y type (not object)
@@ -470,7 +489,7 @@ def castdf_to_int(dataframe):
 
 	dataframe['conversionmci'] = pd.Series(dataframe['conversionmci'],dtype='Int64')
 	dataframe['apoe'] = pd.Series(dataframe['apoe'],dtype='Int64')
-	dataframe['educrenta'] = pd.Series(dataframe['educrenta'],dtype='Int64')
+	#dataframe['educrenta'] = pd.Series(dataframe['educrenta'],dtype='Int64')
 	dataframe['numero_barrio'] = pd.Series(dataframe['numero_barrio'],dtype='Int64')
 	dataframe['numero_distrito'] = pd.Series(dataframe['numero_distrito'],dtype='Int64')
 	dataframe['nivel_educativo'] = pd.Series(dataframe['nivel_educativo'],dtype='Int64')
@@ -495,6 +514,8 @@ def main():
 	dataframe_orig = dataframe.copy()
 	print('Build dictionary with features ontology and check the features are in the dataframe\n') 
 	
+	# remove redundant features ['nivelrenta', 'educrenta']
+	dataframe = remove_features_redundant(dataframe)
 	# cast to int some features eg conversionmci
 	dataframe = castdf_to_int(dataframe)
 
@@ -510,15 +531,20 @@ def main():
 	# Filtering ###
 	##########################
 	X, y = prepare_df(dataframe, features_dict)
+	# test for correct transformation of Real features ['renta', 'pabd', 'talla', 'imc', 'peso']
 	X = encode_in_quartiles(X)
 
 	print('Filtering for Feature Selection')
 	#10 to 1 rule
-	nboffeats = int(np.sum(dataframe['conversionmci']==1)/10)
+	nboffeats = int(round((np.sum(dataframe['conversionmci']==1)/10)))
 	print("The minority class has %d members" % (np.sum(dataframe['conversionmci']==1)))
 	print("The number of parameters for the 10:1 rule is %d" % (nboffeats))
-	#feature_selection_filtering(X, y, nboffeats)
-	
+	#remove apoe
+	X = X.drop('apoe', axis=1)
+	feature_selection_filtering(X, y, nboffeats)
+
+	pdb.set_trace()
+
 	##########################
 	# Wrapping (REF) ###
 	##########################

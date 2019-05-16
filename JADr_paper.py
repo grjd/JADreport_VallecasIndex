@@ -28,13 +28,17 @@ import sys
 import statsmodels.api as sm
 import time
 import importlib
-import rfpimp
+#import rfpimp
+from rfpimp import *
 #sys.path.append('/Users/jaime/github/code/tensorflow/production')
 #import descriptive_stats as pv
 #sys.path.append('/Users/jaime/github/papers/EDA_pv/code')
 import warnings
 from subprocess import check_output
 #import area_under_curve 
+import matplotlib
+matplotlib.use('Agg')
+#from matplotlib import pyplot
 import matplotlib.pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
@@ -50,10 +54,10 @@ def vallecas_features_dictionary(dataframe):
 	# REMOVED 'nivelrenta','educrenta'
 	cluster_dict = {'Demographics':['edad_visita1','edad_visita2', 'edad_visita3', 'edad_visita4', 'edad_visita5', \
 	'edad_visita6', 'edad_visita7', 'edadinicio_visita1', 'edadinicio_visita2', 'edadinicio_visita3',\
-	'edadinicio_visita4', 'edadinicio_visita5', 'edadinicio_visita6'],'Demographics_s':\
+	'edadinicio_visita4', 'edadinicio_visita5', 'edadinicio_visita6','edad_ultimodx'],'Demographics_s':\
 	['renta', 'numero_barrio','numero_distrito','sexo','nivel_educativo',\
 	'anos_escolaridad','sdestciv','sdhijos', 'numhij','sdvive','sdocupac', 'sdresid', \
-	'sdtrabaja','sdeconom','sdatrb'],'SCD':['scd_visita1', \
+	'sdtrabaja','sdeconom','sdatrb', 'edad_visita1'],'SCD':['scd_visita1', \
 	'scd_visita2', 'scd_visita3', 'scd_visita4', 'scd_visita5', 'scd_visita6', \
 	'scdgroups_visita1', 'scdgroups_visita2', 'scdgroups_visita3', 'scdgroups_visita4', \
 	'scdgroups_visita5', 'scdgroups_visita6', 'peorotros_visita1', \
@@ -153,7 +157,7 @@ def vallecas_features_dictionary(dataframe):
 	#dataframe.drop([list_feature_to_remove], axis=1,  inplace=True)
 	return cluster_dict
 
-def encode_in_quartiles(df):
+def encode_in_quartiles(df,float_f=None):
 	"""encode_in_quartiles: ecnode Real features  ['renta', 'pabd', 'talla', 'imc', 'peso']
 	into quartiles (4 bins)
 	Args: df
@@ -165,13 +169,16 @@ def encode_in_quartiles(df):
 	df_cut = df.copy()
 	series = df.dtypes # series[ss] == np.float64
 	num_bins = 4
-	float_f = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal']
-
+	if float_f is None:float_f = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal','edad_visita1']
+	# float_f = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal',\
+	# 'scd_visita1', 'sdatrb', 'anos_escolaridad', 'sue_noc', 'sue_dia', 'sdeconom',\
+	# 'sdocupac','numhij','relaamigo','sdvive','edad_visita1']
 	for ff in float_f:
 		print('Encoding in quartiles %s' %ff)
 		#enc = KBinsDiscretizer(n_bins=4, encode='ordinal', strategy=strategies[1])	
 		#del df_cut[ff]
 		#bins = pd.qcut(df[ff],num_bins)
+		
 		bins = pd.qcut(df[ff],num_bins, duplicates='drop')
 		labels, uniques= pd.factorize(bins, sort=True)
 		df_cut[ff] = labels
@@ -209,65 +216,106 @@ def remove_features_redundant(df):
 	"""remove_features_redundant
 	Output: dataframe
 	"""
+
 	redundant = ['nivelrenta', 'educrenta']
 	return df.drop(redundant, axis=1)
 
 
-def feature_selection_wrapping(X, y, nboffeats):
+
+def plot_wrapper_fig(rfecv, figname, estimator_name=None):
 	"""
 	"""
-	from sklearn.svm import SVC
-	from sklearn.model_selection import StratifiedKFold
-	from sklearn.feature_selection import RFECV
-	# Build a classification task using nboffeats informative features
-	# Create the RFE object and compute a cross-validated score.
-	C = 10; kernel = "linear"; scoring = 'recall'
-	svc = SVC(C=C, kernel=kernel)
-	print('Classifier built\n')
-	# The "accuracy" scoring is proportional to the number of correct
-	# classifications
-	print('Calling to RFECV for Feature ranking with recursive feature elimination and cross-validated selection of the best number of features . \n')
-	rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(2), scoring=scoring, n_jobs=14, verbose=0)
-	print('Estimator x-validation built. Fitting the estimator....\n')
-	start = time.time()
-	rfecv.fit(X, y)
-	end = time.time()
-	print('RFE Fitting time was=', end - start)
-
-	print("\n Optimal number of features : %d" % rfecv.n_features_)
-	print("\n Support of features : %s" % X.columns[rfecv.support_])
-	print("\n Ranking of features :%s  %s" % (X.columns, rfecv.ranking_))
-	for index, item in enumerate(X.columns):
-		print("Feature: %s, Ranked in importance %d:" %(item,rfecv.ranking_[index]))
-
-	# Plot number of features VS. cross-validation scores
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/edad'
 	plt.figure()
 	plt.xlabel("Number of features selected")
 	plt.ylabel("Cross validation score (nb of correct classifications)")
-	plt.title('Feature importance Warapper method')
+	plt.title('Feature importance Wrapper:' + estimator_name)
 	plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
-	figname = 'Warapper_scv' + 'C_' + str(C) + 'kernel_' + str(kernel) + '_' + scoring + '.png'
 	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
-	plt.show()
 
 
-def feature_selection_embedding(X, y, nboffeats):
+def feature_selection_wrapping(X, y, nboffeats=None):
+	"""feature_selection_wrapping select important features RFE using 
+	machine learnign and a evaluation metric.
+	Create the RFE object and compute a cross-validated score.
 	"""
+	#from iterimport tools import product
+	import itertools as it
+	from sklearn.svm import SVC
+	from sklearn.model_selection import StratifiedKFold
+	from sklearn.feature_selection import RFECV
+	from sklearn.linear_model import LogisticRegression
+
+	#figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures'
+	# C smaller values specify stronger regularization
+	model_dict = {'SVC': {'C': np.array([ 0.01, 0.1, 1, 10]), 'kernel':['linear'], \
+	'scoring':['accuracy', 'recall', 'f1', 'roc_auc']}, \
+	'LogisticRegression':{'C': np.array([ 0.01, 0.1, 1, 10]),\
+	'class_weight' : [None, 'balanced'], 'penalty': ['l1', 'l2'], 'solver':['liblinear'], \
+	'scoring': ['accuracy', 'recall', 'f1', 'roc_auc']}} 
+	#Logistic Regression supports only penalties in ['l1', 'l2'], not elasticnet
+
+	keys = model_dict.keys()
+	for keymodel in keys:
+		dictio = model_dict[keymodel]
+		allNames = sorted(dictio)
+		combinations = list(it.product(*(dictio[Name] for Name in allNames)))
+		print(combinations)
+		if keymodel == 'SVC':
+			for hyperpar in combinations:
+				print('Building SVC model for hyperparameters', hyperpar)
+				C = hyperpar[0]; kernel = hyperpar[1]; scoring = hyperpar[2]
+				svc = SVC(C=C, kernel=kernel)
+				print('Calling to RFECV for Feature ranking with recursive feature elimination and cross-validated selection of the best number of features . \n')
+				rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(2), scoring=scoring, n_jobs=14, verbose=0)
+				print('Estimator x-validation built. Fitting the estimator....\n')
+				start = time.time()
+				rfecv.fit(X, y)
+				end = time.time()
+				print('RFE Fitting time was=', end - start)
+				print("\n Optimal number of features : %d" % rfecv.n_features_)
+				print("\n Support of features : %s" % X.columns[rfecv.support_])
+				print("\n Ranking of features :%s  %s" % (X.columns, rfecv.ranking_))
+				for index, item in enumerate(X.columns):
+					print("Feature: %s, Ranked in importance %d:" %(item,rfecv.ranking_[index]))
+				# Plot number of features VS. cross-validation scores
+				figname = 'Wrapper_scv' + 'C_' + str(C) + 'kernel_' + str(kernel) + '_' + scoring + '.png'
+				plot_wrapper_fig(rfecv, figname, rfecv.estimator.__class__.__name__)
+
+		elif keymodel == 'LogisticRegression':
+			for hyperpar in combinations:
+				print('Building LogReg model for hyperparameters', hyperpar)
+				C = hyperpar[0]; class_weight = hyperpar[1]; penalty = hyperpar[2]; \
+				scoring = hyperpar[3]; solver = hyperpar[4]; 
+				logreg = LogisticRegression(penalty=penalty, C= C, class_weight=class_weight, random_state=0, solver=solver)
+				rfecv = RFECV(estimator=logreg, step=1, cv=StratifiedKFold(3), scoring=scoring, n_jobs=14, verbose=0)
+				rfecv.fit(X, y)
+				print("\n Optimal number of features : %d" % rfecv.n_features_)
+				print("\n Support of features : %s" % X.columns[rfecv.support_])
+				print("\n Ranking of features :%s  %s" % (X.columns, rfecv.ranking_))
+				for index, item in enumerate(X.columns):
+					print("Feature: %s, Ranked in importance %d:" %(item,rfecv.ranking_[index]))
+				# Plot number of features VS. cross-validation scores
+				if class_weight is None:
+					class_weight = 'None'
+				figname = 'Wrapper_Log' + '_class_weight_' + class_weight + '_pena_' + penalty + '_C_' + str(C) + '_solver_' + str(solver) + '_' + scoring + '.png'
+				plot_wrapper_fig(rfecv, figname, rfecv.estimator.__class__.__name__)		
+
+
+def feature_selection_embedding_lasso(X,y):
+	"""Select features with Lasso regularization
 	"""
 	from sklearn.feature_selection import SelectFromModel
-	from sklearn.linear_model import LassoCV, LogisticRegression
-	from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
+	from sklearn.linear_model import LassoCV
 	from sklearn.svm import LinearSVC
 
-	# Regularization
-	###############
-	print('Regularization -Lasso- for Feature Selection')
+	print('Regularization -Lasso- for Feature Selection \n\n')
 	# Use the base estimator LassoCV, the L1 norm promotes sparsity of features.
 	clf = LassoCV(cv=5)
 	# Set a minimum threshold of 0.25
 	threshold = 0.25
-	#SelectFromModel is a meta-transformer that can be used along with any estimator that has a coef_ or feature_importances_ attribute after fitting
+	# SelectFromModel is a meta-transformer that can be used along 
+	# with any estimator that has a coef_ or feature_importances_ attribute after fitting
 	sfm = SelectFromModel(clf, threshold=threshold)
 	sfm.fit(X, y)
 	n_features = sfm.transform(X).shape[1]
@@ -288,19 +336,44 @@ def feature_selection_embedding(X, y, nboffeats):
 	#print('Coef Importance::',lsvc.coef)
 	print('Estimator parameters ::', model.get_params())
 	print('Feature names selected ::', feature_name)
+	return {'n_features': n_features, 'feature_name': feature_name, 'feature_idx':feature_idx}
+	#plot_Lasso_fig(rfecv, figname, rfecv.estimator.__class__.__name__)
 
-	# Random Forest
-	###############
-	# Add  random  feature
-	#X['random'] = np.random.random(size=len(X))
-	# Drop apoe
-	X = X.drop('apoe', axis=1)
-	print('\n\n RF for Feature Selection::ExtraTreesClassifier or RandomForestClassifier')
-	criterion = 'gini'; n_estimators = 10000; class_weight=None #bootstrap=True, oob_score=True,  "balanced" 'entropy' 
-	#https://stackoverflow.com/questions/22409855/randomforestclassifier-vs-extratreesclassifier-in-scikit-learn
-	#RandomForestClassifier vs ExtraTreesClassifier
-	forest = RandomForestClassifier(n_estimators=n_estimators, bootstrap=True, oob_score=True,criterion=criterion, class_weight=class_weight, random_state=0, n_jobs=12,verbose=2)
-	forest = forest.fit(X, y)
+
+def plot_rf_importance(rf, X, y, image_name=None):
+	"""https://github.com/parrt/random-forest-importances/blob/master/notebooks/pimp_plots.ipynb
+	"""
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/edad/'
+	Imp = importances(rf, X, y)
+	viz = plot_importances(Imp)
+	viz.save(os.path.join(figures_dir, 'Vanilla_importances_' + image_name + '.svg'))
+	viz = stemplot_importances(Imp, vscale=.7)
+	viz.save(os.path.join(figures_dir, 'Stem_importances.svg'))
+	
+	Imp_df = pd.DataFrame()
+	Imp_df['Feature'] = X.columns
+	Imp_df['Importance'] = rf.feature_importances_
+	Imp_df = Imp_df.sort_values('Importance', ascending=False)
+	Imp_df = Imp_df.set_index('Feature')
+	viz = plot_importances(Imp_df,title="Feature importance via average gini/variance drop (sklearn)")
+	viz.save(os.path.join(figures_dir, 'Gini_importances_' + image_name + '.svg'))
+	#width=6,color='#FDDB7D',bgcolor='#F1F8FE'
+	
+	# Permutation Importance
+	Imp_drop = oob_dropcol_importances(rf, X, y)
+	viz = plot_importances(Imp_drop, title="Drop column importance using OOB score")
+	viz.save(os.path.join(figures_dir, 'Permuta_Drop_OOB_importances_' + image_name + '.svg'))
+
+def plot_rf_score(X,y,forest, nboffeats):
+	""" plot_rf_score Plot the feature importances of the forest
+	"""
+
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/quartiles/test'
+	criterion = forest.get_params()['criterion']
+	n_estimators = forest.get_params()['n_estimators']
+	class_weight = forest.get_params()['class_weight']
+	if class_weight is None: class_weight = 'None'
+	class_name = forest.__class__.__name__
 	importances = forest.feature_importances_ 
 	std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
 	indices = np.argsort(importances)[::-1]
@@ -311,16 +384,16 @@ def feature_selection_embedding(X, y, nboffeats):
 	# Print the feature ranking
 	for f in range(X.shape[1]):
 		print(" %d. feature %d (%f)" % ( f + 1, indices[f], importances[indices[f]]))
-
-	#X = X[columns_imp]	
-	# Plot the feature importances of the forest
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures'
-	criterion = forest.get_params()['criterion']
+	# Score with training dataset
+	print('Score: %f' % forest.score(X, y))
+	# Score Out of the bag (quasi test): evaluating our instances in the training set 
+	# using only the trees for which they were omitted.
+	print('OOB Score %f' % forest.oob_score_) 
 	
-	print('OOB score %f' % forest.oob_score_)
-	figname = 'RF_selector_' + criterion + 'N_' + str(n_estimators) + '.png'
+	# Plot most important features
+	figname = class_name + '_criterion_' + criterion + '_N_' + str(n_estimators) + '_weight_'+ class_weight +'.png'
 	plt.figure(figsize=(9,8))
-	plt.title("Feature importances ExtraTreesClassifier")
+	plt.title("Feature importances:" + class_name)
 	#plt.bar(range(X.shape[1]), importances[indices],color="r", yerr=std[indices], align="center")
 	plt.bar(range(X[columns_imp].shape[1]), importances_imp, color="r", yerr=std[indices][indices_imp], align="center")
 	plt.xticks(range(X[columns_imp].shape[1]), columns_imp, fontsize=10)
@@ -329,28 +402,79 @@ def feature_selection_embedding(X, y, nboffeats):
 	#plt.yticks(rotation=0)
 	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
 
-	# Permutation
-	
-	oob_c = rfpimp.oob_classifier_accuracy(forest, X, y)
-	print('oob_classifier_accuracy == %.5f' % (oob_c))
-	n_samples = 1000
-	I = rfpimp.importances(forest, X, y, n_samples=n_samples)
-	print(I)
-	viz = rfpimp.plot_importances(I)
-	figname = 'RF_selector_Permutation_' + criterion + 'N_' + str(n_estimators) + '_samples_' + str(n_samples) + '.png'
-	viz.save(os.path.join(figures_dir, figname))
-	#viz.view()
-	
-	print('Calling to rf_with_permutation ....')
-	#rf_with_permutation(forest, X, y, rfpimp.oob_classifier_accuracy)
-	pdb.set_trace()
-	print('DONE!!')
 
-def permutation_importances(rf, X_train, y_train, metric):
-	"""does not normalize the importance values, such as dividing by the standard deviation
+# def permutation_rf(X,y,forest):
+# 	"""
+# 	""" 
+	
+# 	oob_c = rfpimp.oob_classifier_accuracy(forest, X, y)
+# 	print('oob_classifier_accuracy == %.5f' % (oob_c))
+# 	n_samples = 1000
+# 	I = rfpimp.importances(forest, X, y, n_samples=n_samples)
+# 	print(I)
+# 	viz = rfpimp.plot_importances(I)
+# 	figname = 'RF_selector_Permutation_' + criterion + '_N_' + str(n_estimators) + '_samples_' + str(n_samples) + '.png'
+# 	viz.save(os.path.join(figures_dir, figname))
+# 	return oob_c
+# 	print('Calling to rf_with_permutation ....')
+# 	#rf_with_permutation(forest, X, y, rfpimp.oob_classifier_accuracy)
+# 	pdb.set_trace()
+# 	print('DONE!!')
+
+def feature_selection_embedding(X, y, nboffeats):
+	"""feature_selection_embedding: select features wiuth random forest |Lasso
+	"""
+	from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
+	import itertools as it
+	# Regularization
+	################
+	dict_Lasso = feature_selection_embedding_lasso(X, y)
+	print('\n\n\n', 'Number of features=', dict_Lasso['n_features'], 'Feature Names:',\
+		dict_Lasso['feature_name'], ' Feature indices:',dict_Lasso['feature_idx'], '\n\n\n')
+
+	# Random Forest
+	###############
+	# Add  random  feature
+	X['random'] = np.random.random(size=len(X))
+	#https://stackoverflow.com/questions/22409855/randomforestclassifier-vs-extratreesclassifier-in-scikit-learn
+	print('\n\n RF for Feature Selection::ExtraTreesClassifier or RandomForestClassifier')
+	model_dict = {'ExtraTreesClassifier':{'criterion':['gini', 'entropy'], \
+	'n_estimators':[100,1000,10000,100000], 'class_weight':[None, 'balanced']},\
+	'RandomForestClassifier':{'criterion':[ 'gini', 'entropy'], 'n_estimators':[100,1000,10000,100000,1000000],\
+	'class_weight':[None, 'balanced']}}
+	model_dict = {'RandomForestClassifier':{'criterion':[ 'gini', 'entropy'], 'n_estimators':[10,100,1000,10000],\
+	'class_weight':[None, 'balanced']}}
+	keys = model_dict.keys()
+	for keymodel in keys:
+		dictio = model_dict[keymodel]
+		allNames = sorted(dictio)
+		combinations = list(it.product(*(dictio[Name] for Name in allNames)))
+		print(combinations)
+		if keymodel == 'ExtraTreesClassifier':
+			for hyperpar in combinations:
+				print('Building ExtraTreesClassifier model for hyperparameters', hyperpar)
+		elif keymodel == 'RandomForestClassifier':
+			for hyperpar in combinations:
+				print('Building RandomForestClassifier model for hyperparameters', hyperpar)
+				n_estimators = hyperpar[2]; criterion = hyperpar[1]; class_weight = hyperpar[0];
+				forest = RandomForestClassifier(n_estimators=n_estimators, bootstrap=True,\
+					oob_score=True,criterion=criterion, class_weight=class_weight, random_state=0, n_jobs=12,verbose=2)
+				forest = forest.fit(X, y)
+				#plot_rf_score(X,y,forest, nboffeats)
+				#oob_c = permutation_rf(X,y,forest)
+				if class_weight is None:
+					class_weight='None'
+				image_name = str(n_estimators) + criterion + class_weight
+				imp = permutation_importances(forest, X, y, oob_classifier_accuracy, image_name)
+
+
+def permutation_importances(rf, X_train, y_train, metric, image_name):
+	"""feature impprtance with permutation
+	https://explained.ai/rf-importance/index.html
+	does not normalize the importance values, such as dividing by the standard deviation
 	https://github.com/parrt/random-forest-importances
 	"""
-	
+
 	baseline = metric(rf, X_train, y_train)
 	print('The baseline for permutation is == %.5f' % (baseline))
 	imp = []
@@ -361,22 +485,22 @@ def permutation_importances(rf, X_train, y_train, metric):
 		X_train[col] = save
 		imp.append(baseline - m)
 		print('Feature %s improved by %.5f' %(col, baseline - m))
+	print('Calling to plot importance rfpimp Library ')
+	plot_rf_importance(rf, X_train, y_train, image_name)	
 	return np.array(imp) 
 
-def rf_with_permutation(rf, X_train, y_train, oob_c):
-	"""rf_with_permutation: feature impprtance with permutation
-	https://explained.ai/rf-importance/index.html
-	rf must be pre-trained 
-	"""
-	#import sys
-	#!{sys.executable} -m pip install rfpimp
-	#metric for regression oob_regression_r2_score
-	imp = permutation_importances(rf, X_train, y_train, oob_c)
-	print('Important features by permutation DONE:', imp)
-	pdb.set_trace()
+# def rf_with_permutation(rf, X_train, y_train, oob_c):
+# 	"""rf_with_permutation: 
+# 	rf must be pre-trained 
+# 	"""
+# 	#import sys
+# 	#!{sys.executable} -m pip install rfpimp
+# 	#metric for regression oob_regression_r2_score
+# 	imp = permutation_importances(rf, X_train, y_train, oob_c)
+# 	print('Important features by permutation DONE:', imp)
+# 	pdb.set_trace()
 
-
-
+ 
 def feature_selection_filtering(X, y, nboffeats):
 	"""feature_selection_filtering: SlectKBeast features
 	Args:X,y, nbof features
@@ -386,14 +510,14 @@ def feature_selection_filtering(X, y, nboffeats):
 	from sklearn.preprocessing import Imputer
 	predictors = X.columns.tolist()
 	#['f_classif', 'mutual_info_classif', 'chi2', 'f_regression', 'mutual_info_regression']
-	selector = SelectKBest(mutual_info_classif, k=nboffeats).fit(X, y)
+	selector = SelectKBest(chi2, k=nboffeats).fit(X, y)
 	# scores_ : array-like, shape=(n_features,) pvalues_ : array-like, shape=(n_features,)
 	top_indices = np.nan_to_num(selector.scores_).argsort()[-nboffeats:][::-1]
 	print("Selector {} scores:",nboffeats, selector.scores_[top_indices])
 	print("Top features:\n", X.columns[top_indices])
 
 	#Plot heatmaps
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/edad'
 	f_name = selector.get_params()['score_func'].__name__
 	figname = 'HeatmapF_' + f_name + '.png'
 	plt.figure(figsize=(18, 16))
@@ -484,6 +608,34 @@ def prepare_df(dataframe, pv_dict):
 	y = y.astype('int')
 	return X, y
 
+def	change_DkDa_features(df):
+	"""change_DkDa_features: replace 9 by distribution with proportion
+	"""
+	featureswithnines =['tce','arri','cor', 'ictus', 'lipid', 'tir',\
+	'sue_ron', 'sue_rui', 'sue_hor','sue_mov','sue_pro','sue_suf','sue_rec']
+	dfo = df.copy()
+	for feat in featureswithnines:
+		print(df[feat].value_counts())
+		zeros = sum(df[feat] == 0); ones = sum(df[feat] == 1);twos = sum(df[feat] == 2);
+		threes = sum(df[feat] == 3);nines = sum(df[feat] == 9)
+		if twos > 0:
+			listofvalues = [0,1,2]
+			p0 = float(zeros/(zeros+ones+twos)); p1 = float(ones/(zeros+ones+twos))
+			listofps = [p0, p1, 1 - p0 - p1]
+		else:
+			listofvalues = [0,1]
+			p0 = float(zeros/(zeros+ones)); p1 = float(ones/(zeros+ones))
+			listofps = [p0, 1 - p0]
+		if threes > 0:
+			listofvalues = [0,1,2,3]
+			p0 = float(zeros/(zeros+ones+twos+threes)); p1 = float(ones/(zeros+ones+twos+threes));
+			p2 =  float(twos/(zeros+ones+twos+threes))
+			listofps = [p0, p1, p2, 1 - p0 -p1 -p2]
+		replaces = np.random.choice(listofvalues, nines , listofps)
+		mask = df[feat] == 9 
+		df.loc[mask, feat] = replaces
+		print(df[feat].value_counts())
+	return df
 
 def castdf_to_int(dataframe):
 
@@ -495,6 +647,9 @@ def castdf_to_int(dataframe):
 	dataframe['nivel_educativo'] = pd.Series(dataframe['nivel_educativo'],dtype='Int64')
 	dataframe['anos_escolaridad'] = pd.Series(dataframe['anos_escolaridad'],dtype='Int64')
 	dataframe['lat_manual'] = pd.Series(dataframe['lat_manual'],dtype='Int64')
+	dataframe['edad_ultimodx'] = pd.Series(dataframe['edad_ultimodx'],dtype='Int64')
+	dataframe['edad_visita1'] = pd.Series(dataframe['edad_visita1'],dtype='Int64')
+
 	return dataframe
 
 ##################################################################################
@@ -515,6 +670,8 @@ def main():
 	print('Build dictionary with features ontology and check the features are in the dataframe\n') 
 	
 	# remove redundant features ['nivelrenta', 'educrenta']
+	# replace features dont know dont answer 9
+	dataframe = change_DkDa_features(dataframe)
 	dataframe = remove_features_redundant(dataframe)
 	# cast to int some features eg conversionmci
 	dataframe = castdf_to_int(dataframe)
@@ -532,7 +689,8 @@ def main():
 	##########################
 	X, y = prepare_df(dataframe, features_dict)
 	# test for correct transformation of Real features ['renta', 'pabd', 'talla', 'imc', 'peso']
-	X = encode_in_quartiles(X)
+	toq = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal','edad_visita1']
+	X = encode_in_quartiles(X, toq)
 
 	print('Filtering for Feature Selection')
 	#10 to 1 rule
@@ -540,23 +698,24 @@ def main():
 	print("The minority class has %d members" % (np.sum(dataframe['conversionmci']==1)))
 	print("The number of parameters for the 10:1 rule is %d" % (nboffeats))
 	#remove apoe
-	X = X.drop('apoe', axis=1)
+	#X = X.drop('apoe', axis=1)
 	feature_selection_filtering(X, y, nboffeats)
-
-	pdb.set_trace()
-
 	##########################
 	# Wrapping (REF) ###
 	##########################
-	print('Wrapping for Feature Selection')
-	#feature_selection_wrapping(X, y, nboffeats)
-
+	#remove apoe
+	X = X.drop('apoe', axis=1)
+	print('Wrapping methods (SVC LogReg), for Feature Selection \n')
+	feature_selection_wrapping(X, y, nboffeats)
+	
 	##########################
 	# Embedded (RF) ###
 	##########################
-	print('Embeded for Feature Selection')
-	feature_selection_embedding(X, y, nboffeats)
 
+	print('Embeded method (RandomForest) for Feature Selection \n')
+	feature_selection_embedding(X, y, nboffeats)
+	print('END Embeded method (RandomForest) for Feature Selection \n')
+	pdb.set_trace()
 	##########################
 	#testing here cut paste###
 	##########################

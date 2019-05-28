@@ -225,7 +225,7 @@ def remove_features_redundant(df):
 def plot_wrapper_fig(rfecv, figname, estimator_name=None):
 	"""
 	"""
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/edad'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE'
 	plt.figure()
 	plt.xlabel("Number of features selected")
 	plt.ylabel("Cross validation score (nb of correct classifications)")
@@ -251,7 +251,7 @@ def feature_selection_wrapping(X, y, nboffeats=None):
 	model_dict = {'SVC': {'C': np.array([ 0.01, 0.1, 1, 10]), 'kernel':['linear'], \
 	'scoring':['accuracy', 'recall', 'f1', 'roc_auc']}, \
 	'LogisticRegression':{'C': np.array([ 0.01, 0.1, 1, 10]),\
-	'class_weight' : [None, 'balanced'], 'penalty': ['l1', 'l2'], 'solver':['liblinear'], \
+	'class_weight' : [None], 'penalty': ['l1', 'l2'], 'solver':['liblinear'], \
 	'scoring': ['accuracy', 'recall', 'f1', 'roc_auc']}} 
 	#Logistic Regression supports only penalties in ['l1', 'l2'], not elasticnet
 
@@ -299,7 +299,8 @@ def feature_selection_wrapping(X, y, nboffeats=None):
 				if class_weight is None:
 					class_weight = 'None'
 				figname = 'Wrapper_Log' + '_class_weight_' + class_weight + '_pena_' + penalty + '_C_' + str(C) + '_solver_' + str(solver) + '_' + scoring + '.png'
-				plot_wrapper_fig(rfecv, figname, rfecv.estimator.__class__.__name__)		
+				plot_wrapper_fig(rfecv, figname, rfecv.estimator.__class__.__name__)
+		pdb.set_trace()	
 
 
 def feature_selection_embedding_lasso(X,y):
@@ -343,7 +344,7 @@ def feature_selection_embedding_lasso(X,y):
 def plot_rf_importance(rf, X, y, image_name=None):
 	"""https://github.com/parrt/random-forest-importances/blob/master/notebooks/pimp_plots.ipynb
 	"""
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/edad/'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE/'
 	Imp = importances(rf, X, y)
 	viz = plot_importances(Imp)
 	viz.save(os.path.join(figures_dir, 'Vanilla_importances_' + image_name + '.svg'))
@@ -368,7 +369,7 @@ def plot_rf_score(X,y,forest, nboffeats):
 	""" plot_rf_score Plot the feature importances of the forest
 	"""
 
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/quartiles/test'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE'
 	criterion = forest.get_params()['criterion']
 	n_estimators = forest.get_params()['n_estimators']
 	class_weight = forest.get_params()['class_weight']
@@ -435,15 +436,15 @@ def feature_selection_embedding(X, y, nboffeats):
 	# Random Forest
 	###############
 	# Add  random  feature
-	X['random'] = np.random.random(size=len(X))
+	#X['random'] = np.random.random(size=len(X))
 	#https://stackoverflow.com/questions/22409855/randomforestclassifier-vs-extratreesclassifier-in-scikit-learn
 	print('\n\n RF for Feature Selection::ExtraTreesClassifier or RandomForestClassifier')
 	model_dict = {'ExtraTreesClassifier':{'criterion':['gini', 'entropy'], \
 	'n_estimators':[100,1000,10000,100000], 'class_weight':[None, 'balanced']},\
 	'RandomForestClassifier':{'criterion':[ 'gini', 'entropy'], 'n_estimators':[100,1000,10000,100000,1000000],\
 	'class_weight':[None, 'balanced']}}
-	model_dict = {'RandomForestClassifier':{'criterion':[ 'gini', 'entropy'], 'n_estimators':[10,100,1000,10000],\
-	'class_weight':[None, 'balanced']}}
+	model_dict = {'RandomForestClassifier':{'criterion':[ 'gini', 'entropy'], 'n_estimators':[100,1000,10000,100000],\
+	'class_weight':[None]}}
 	keys = model_dict.keys()
 	for keymodel in keys:
 		dictio = model_dict[keymodel]
@@ -460,7 +461,7 @@ def feature_selection_embedding(X, y, nboffeats):
 				forest = RandomForestClassifier(n_estimators=n_estimators, bootstrap=True,\
 					oob_score=True,criterion=criterion, class_weight=class_weight, random_state=0, n_jobs=12,verbose=2)
 				forest = forest.fit(X, y)
-				#plot_rf_score(X,y,forest, nboffeats)
+				plot_rf_score(X,y,forest, nboffeats)
 				#oob_c = permutation_rf(X,y,forest)
 				if class_weight is None:
 					class_weight='None'
@@ -469,7 +470,7 @@ def feature_selection_embedding(X, y, nboffeats):
 
 
 def permutation_importances(rf, X_train, y_train, metric, image_name):
-	"""feature impprtance with permutation
+	"""feature importance with permutation
 	https://explained.ai/rf-importance/index.html
 	does not normalize the importance values, such as dividing by the standard deviation
 	https://github.com/parrt/random-forest-importances
@@ -517,7 +518,7 @@ def feature_selection_filtering(X, y, nboffeats):
 	print("Top features:\n", X.columns[top_indices])
 
 	#Plot heatmaps
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/edad'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE'
 	f_name = selector.get_params()['score_func'].__name__
 	figname = 'HeatmapF_' + f_name + '.png'
 	plt.figure(figsize=(18, 16))
@@ -681,7 +682,7 @@ def main():
 	# select rows with 5 visits
 	visits=['tpo1.2', 'tpo1.3','tpo1.4', 'tpo1.5','tpo1.6']
 	df_loyals = select_rows_all_visits(dataframe, visits)
-
+	pdb.set_trace()
 	#Feature Selection using three different methodoloies: Filtering (intrinsic) 
 	#and model based : Wrapping (RFEF, GA) and Embedded(RF, Regularization)
 	##########################
@@ -699,12 +700,12 @@ def main():
 	print("The number of parameters for the 10:1 rule is %d" % (nboffeats))
 	#remove apoe
 	#X = X.drop('apoe', axis=1)
-	feature_selection_filtering(X, y, nboffeats)
+	#feature_selection_filtering(X, y, nboffeats)
 	##########################
 	# Wrapping (REF) ###
 	##########################
 	#remove apoe
-	X = X.drop('apoe', axis=1)
+	#X = X.drop('apoe', axis=1)
 	print('Wrapping methods (SVC LogReg), for Feature Selection \n')
 	feature_selection_wrapping(X, y, nboffeats)
 	

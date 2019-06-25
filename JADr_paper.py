@@ -34,7 +34,7 @@ from rfpimp import *
 #import descriptive_stats as pv
 #sys.path.append('/Users/jaime/github/papers/EDA_pv/code')
 import warnings
-from subprocess import check_output
+#from subprocess import check_output
 #import area_under_curve 
 import matplotlib
 matplotlib.use('Agg')
@@ -43,6 +43,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.feature_selection import SelectKBest, f_classif, mutual_info_classif, chi2
+from pprint import pprint
+from sklearn import metrics
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.metrics import precision_score, f1_score, accuracy_score, recall_score,\
+confusion_matrix,roc_auc_score, roc_curve, auc, classification_report,precision_recall_curve,\
+make_scorer, average_precision_score
 
 def vallecas_features_dictionary(dataframe):
 	"""vallecas_features_dictionary: builds a dictionary with the feature clusters of PV
@@ -216,7 +222,6 @@ def remove_features_redundant(df):
 	"""remove_features_redundant
 	Output: dataframe
 	"""
-
 	redundant = ['nivelrenta', 'educrenta']
 	return df.drop(redundant, axis=1)
 
@@ -242,7 +247,6 @@ def feature_selection_wrapping(X, y, nboffeats=None):
 	#from iterimport tools import product
 	import itertools as it
 	from sklearn.svm import SVC
-	from sklearn.model_selection import StratifiedKFold
 	from sklearn.feature_selection import RFECV
 	from sklearn.linear_model import LogisticRegression
 
@@ -267,7 +271,7 @@ def feature_selection_wrapping(X, y, nboffeats=None):
 				C = hyperpar[0]; kernel = hyperpar[1]; scoring = hyperpar[2]
 				svc = SVC(C=C, kernel=kernel)
 				print('Calling to RFECV for Feature ranking with recursive feature elimination and cross-validated selection of the best number of features . \n')
-				rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(2), scoring=scoring, n_jobs=14, verbose=0)
+				rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(2), scoring=scoring, n_jobs=5, verbose=0)
 				print('Estimator x-validation built. Fitting the estimator....\n')
 				start = time.time()
 				rfecv.fit(X, y)
@@ -288,7 +292,7 @@ def feature_selection_wrapping(X, y, nboffeats=None):
 				C = hyperpar[0]; class_weight = hyperpar[1]; penalty = hyperpar[2]; \
 				scoring = hyperpar[3]; solver = hyperpar[4]; 
 				logreg = LogisticRegression(penalty=penalty, C= C, class_weight=class_weight, random_state=0, solver=solver)
-				rfecv = RFECV(estimator=logreg, step=1, cv=StratifiedKFold(3), scoring=scoring, n_jobs=14, verbose=0)
+				rfecv = RFECV(estimator=logreg, step=1, cv=StratifiedKFold(3), scoring=scoring, n_jobs=6, verbose=0)
 				rfecv.fit(X, y)
 				print("\n Optimal number of features : %d" % rfecv.n_features_)
 				print("\n Support of features : %s" % X.columns[rfecv.support_])
@@ -365,11 +369,33 @@ def plot_rf_importance(rf, X, y, image_name=None):
 	viz = plot_importances(Imp_drop, title="Drop column importance using OOB score")
 	viz.save(os.path.join(figures_dir, 'Permuta_Drop_OOB_importances_' + image_name + '.svg'))
 
+
+def visualize_DTfromRF(forest, feature_names, target_names):
+	"""
+	"""
+	from sklearn.tree import export_graphviz
+	from subprocess import call
+	import pydot
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
+	# Extract single tree
+	estimator = forest.estimators_[6]
+	# Export as dot file
+	export_graphviz(estimator, out_file='tree.dot',feature_names = feature_names, class_names = target_names, rounded = True, proportion = False, precision = 2, filled = True)
+	# Convert to png using system command (requires Graphviz)
+	print('Saving tree.dot....')
+	#call(['dot', '-Tpng', 'tree.dot', '-o', 'tree.png', '-Gdpi=600'])
+	# Use dot file to create a graph
+	(graph, ) = pydot.graph_from_dot_file('tree.dot')
+
+	graph.write_png(os.path.join(figures_dir,'tree_allfeatures.png'))
+
+
 def plot_rf_score(X,y,forest, nboffeats):
 	""" plot_rf_score Plot the feature importances of the forest
 	"""
 
 	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE'
+
 	criterion = forest.get_params()['criterion']
 	n_estimators = forest.get_params()['n_estimators']
 	class_weight = forest.get_params()['class_weight']
@@ -377,19 +403,22 @@ def plot_rf_score(X,y,forest, nboffeats):
 	class_name = forest.__class__.__name__
 	importances = forest.feature_importances_ 
 	std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
+	#####
+	importances = importances*std
+	#####
 	indices = np.argsort(importances)[::-1]
 	indices_imp = indices[:nboffeats]
 	columns_imp = X.columns[indices_imp].tolist()
 	importances_imp = importances[indices_imp]
 	print('Most important features :', columns_imp) 
 	# Print the feature ranking
-	for f in range(X.shape[1]):
-		print(" %d. feature %d (%f)" % ( f + 1, indices[f], importances[indices[f]]))
+	#for f in range(X.shape[1]):
+	#	print(" %d. feature %d (%f)" % ( f + 1, indices[f], importances[indices[f]]))
 	# Score with training dataset
 	print('Score: %f' % forest.score(X, y))
 	# Score Out of the bag (quasi test): evaluating our instances in the training set 
 	# using only the trees for which they were omitted.
-	print('OOB Score %f' % forest.oob_score_) 
+	#print('OOB Score %f' % forest.oob_score_) 
 	
 	# Plot most important features
 	figname = class_name + '_criterion_' + criterion + '_N_' + str(n_estimators) + '_weight_'+ class_weight +'.png'
@@ -402,6 +431,7 @@ def plot_rf_score(X,y,forest, nboffeats):
 	plt.xticks(rotation=90)
 	#plt.yticks(rotation=0)
 	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
+	return [importances, indices_imp, columns_imp, importances_imp, std]
 
 
 # def permutation_rf(X,y,forest):
@@ -421,6 +451,25 @@ def plot_rf_score(X,y,forest, nboffeats):
 # 	#rf_with_permutation(forest, X, y, rfpimp.oob_classifier_accuracy)
 # 	pdb.set_trace()
 # 	print('DONE!!')
+
+
+def baseline_classifier(X_train, y_train, X_test, y_test):
+	"""baseline_classifier make prediction with simple rules
+	"""
+	
+	from sklearn.dummy import DummyClassifier
+	# generates predictions uniformly at random.
+	uniform = DummyClassifier(strategy='uniform', random_state=42)
+	uniform.fit(X_train, y_train)
+
+	# always predicts the most frequent label in the training set.
+	frequent = DummyClassifier(strategy="most_frequent", random_state=42)
+	frequent.fit(X_train, y_train)
+
+	# generates predictions by respecting the training set’s class distribution.
+	stratified = DummyClassifier(strategy="stratified")
+	stratified.fit(X_train, y_train)
+	return [uniform, frequent,stratified]  
 
 def feature_selection_embedding(X, y, nboffeats):
 	"""feature_selection_embedding: select features wiuth random forest |Lasso
@@ -443,8 +492,8 @@ def feature_selection_embedding(X, y, nboffeats):
 	'n_estimators':[100,1000,10000,100000], 'class_weight':[None, 'balanced']},\
 	'RandomForestClassifier':{'criterion':[ 'gini', 'entropy'], 'n_estimators':[100,1000,10000,100000,1000000],\
 	'class_weight':[None, 'balanced']}}
-	model_dict = {'RandomForestClassifier':{'criterion':[ 'gini', 'entropy'], 'n_estimators':[100,1000,10000,100000],\
-	'class_weight':[None]}}
+	model_dict = {'RandomForestClassifier':{'criterion':[ 'gini'], 'n_estimators':[1000],\
+	'class_weight':['balanced']}}
 	keys = model_dict.keys()
 	for keymodel in keys:
 		dictio = model_dict[keymodel]
@@ -458,15 +507,73 @@ def feature_selection_embedding(X, y, nboffeats):
 			for hyperpar in combinations:
 				print('Building RandomForestClassifier model for hyperparameters', hyperpar)
 				n_estimators = hyperpar[2]; criterion = hyperpar[1]; class_weight = hyperpar[0];
-				forest = RandomForestClassifier(n_estimators=n_estimators, bootstrap=True,\
-					oob_score=True,criterion=criterion, class_weight=class_weight, random_state=0, n_jobs=12,verbose=2)
+				max_depth = hyperpar[-1]
+				forest = RandomForestClassifier(n_estimators=n_estimators,max_depth =8, bootstrap=True,\
+					oob_score=True,criterion=criterion, class_weight=class_weight, random_state=0, n_jobs=6,verbose=2)
 				forest = forest.fit(X, y)
-				plot_rf_score(X,y,forest, nboffeats)
+				# rf score for importance/std
+				[importances, indices_imp, columns_imp, importances_imp, std] = plot_rf_score(X,y,forest, nboffeats)
+				forest_redux = important_forest(X[columns_imp[0:2]], y,n_estimators,criterion,class_weight)
+				#visualize_DTfromRF(forest_redux,X[columns_imp[0:3]].columns ,y.name)
+				
+
+				pdb.set_trace()
 				#oob_c = permutation_rf(X,y,forest)
 				if class_weight is None:
 					class_weight='None'
 				image_name = str(n_estimators) + criterion + class_weight
-				imp = permutation_importances(forest, X, y, oob_classifier_accuracy, image_name)
+				#imp = permutation_importances(forest, X, y, oob_classifier_accuracy, image_name)
+				print('Visualizing DT from RF...')
+				forest_redux = important_forest(X[columns_imp], y,n_estimators,criterion,class_weight)
+				visualize_DTfromRF(forest_redux,X[columns_imp].columns ,y.name)
+				pdb.set_trace()
+	
+def ROC_Curve(rf, auc,X_train,X_test,y_train,y_test):
+	from sklearn.preprocessing import OneHotEncoder
+
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures'
+	one_hot_encoder = OneHotEncoder()
+	rf_fit = rf.fit(X_train, y_train)
+	#fit = one_hot_encoder.fit(rf.apply(X_train))
+	y_predicted = rf_fit.predict_proba(X_test)[:, 1]
+	false_positive, true_positive, _ = roc_curve(y_test, y_predicted)
+
+	plt.figure()
+	plt.plot([0, 1], [0, 1], 'k--')
+	plt.plot(false_positive, true_positive, color='darkorange', label='Random Forest')
+	plt.xlabel('False positive rate')
+	plt.ylabel('True positive rate')
+	#plt.title('ROC curve (area = %0.2f)' % auc)
+	plt.legend(loc='best')
+	figname='roc_curve.png'
+	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
+	plt.show()
+
+
+def important_forest(X, y,n_estimators,criterion,class_weight):
+	"""
+	"""	
+
+	X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3, random_state=0)
+	forest = RandomForestClassifier(n_estimators=n_estimators, max_depth =4, bootstrap=True,oob_score=True,criterion=criterion, class_weight=class_weight,random_state=0, n_jobs=6,verbose=2)
+	forest = forest.fit(X_train, y_train)
+
+	y_pred = forest.predict(X_test)
+	print(len(X_test))
+	print(accuracy_score(y_test,y_pred))
+	print(recall_score(y_test,y_pred))
+	print(confusion_matrix(y_test,y_pred))
+	#Plot ROC
+	best_model = forest[90]
+	print('\nbest_model:\n', best_model)
+	y_predicted = best_model.predict(X_train)
+	y_predicted_train = best_model.predict(X_train)
+	cm = confusion_matrix(y_train, y_predicted_train)
+	auc = roc_auc_score(y_train, y_predicted_train)
+	ROC_Curve(best_model, auc, X_train,X_test,y_train,y_test)
+	pdb.set_trace()
+	return forest
+
 
 
 def permutation_importances(rf, X_train, y_train, metric, image_name):
@@ -535,7 +642,7 @@ def feature_selection_filtering(X, y, nboffeats):
 	figname = 'HeatmapTopF_' + f_name + '.png'
 	topi = X.columns[top_indices]; 
 	#topi = topi + ['conversionmci']
-	plt.figure(figsize=(8, 6))
+	plt.figure(figsize=(8, 4))
 	#corr = dataframe[topi].corr()
 	#corr =dataframe[topi].join(y).corr()
 	corr = X[topi].corr()
@@ -549,10 +656,10 @@ def feature_selection_filtering(X, y, nboffeats):
 	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
 
 
-def prepare_df(dataframe, pv_dict):
-	"""prepare_df
+def select_PVdictio(dataframe, pv_dict, target=None):
+	"""prepare_df: select columns relevant for JADr paper
 	Args: Dataframe and dictionary
-	Output: Input X and traget y
+	Output: dataframe of PV dictionary
 	"""
 	# Predictors are static feature ['Genetics_s', 'Cardiovascular_s', 'PhysicalExercise_s', 'PsychiatricHistory_s', 'Sleep_s', \
 	#'Anthropometric_s', 'Diet_s', 'SocialEngagement_s', 'TraumaticBrainInjury_s', 'Demographics_s', \
@@ -561,7 +668,7 @@ def prepare_df(dataframe, pv_dict):
 	genetics = pv_dict['Genetics_s']; genetics.remove('apoe2niv')
 	print(np.sum(dataframe[genetics].isnull()==True))
 	demog = pv_dict['Demographics_s']; 
-	demog = list(filter(lambda x: x not in [ 'numero_barrio', 'numero_distrito', 'tce_num', 'tce_secu'], demog))
+	demog = list(filter(lambda x: x not in ['sdresid', 'numero_barrio', 'numero_distrito'], demog))
 	#demog = ['renta', 'nivelrenta', 'educrenta','sexo', 'nivel_educativo', 'anos_escolaridad', 'sdestciv', 'sdhijos', 'numhij', 'sdvive', 'sdocupac', 'sdresid', 'sdtrabaja', 'sdeconom', 'sdatrb']
 	print(np.sum(dataframe[demog].isnull()==True)) 
 	# nivel_educativo anos_escolaridad educrenta (2) 
@@ -570,12 +677,13 @@ def prepare_df(dataframe, pv_dict):
 	sleep = pv_dict['Sleep_s']; print(np.sum(dataframe[sleep].isnull()==True))
 	social = pv_dict['SocialEngagement_s']; print(np.sum(dataframe[social].isnull()==True))
 	engagement = pv_dict['EngagementExternalWorld_s']; print(np.sum(dataframe[engagement].isnull()==True))
+	engagement = list(filter(lambda x: x not in ['a07', 'a14'], engagement))
 	diet = pv_dict['Diet_s']
 	diet = list(filter(lambda x: x not in ['alaceit', 'dietaglucemica', 'dietagrasa', 'dietaproteica', 'dietasaludable'], diet))
 	print(np.sum(dataframe[diet].isnull()==True))	
 	phys = pv_dict['PhysicalExercise_s']; print(np.sum(dataframe[social].isnull()==True))
 	cardio = pv_dict['Cardiovascular_s']
-	cardio = list(filter(lambda x: x not in ['hta_ini', 'sp', 'tabac_fin', 'tabac_cant', 'tabac_ini', 'cor_ini','arri_ini', 'card_ini','ictus_ini','ictus_num','ictus_secu'], cardio))
+	cardio = list(filter(lambda x: x not in ['card', 'hta_ini', 'sp', 'tabac_fin', 'tabac_cant', 'tabac_ini', 'cor_ini','arri_ini', 'card_ini','ictus_ini','ictus_num','ictus_secu'], cardio))
 	print(np.sum(dataframe[cardio].isnull()==True))
 	tbi = pv_dict['TraumaticBrainInjury_s'] 
 	tbi = list(filter(lambda x: x not in [ 'tce_con', 'tce_ini', 'tce_num', 'tce_secu'], tbi))
@@ -591,29 +699,29 @@ def prepare_df(dataframe, pv_dict):
 	qol =  ['eq5dmov_visita1', 'eq5ddol_visita1', 'valfelc2_visita1','eq5dsalud_visita1']
 	#remove NaNs
 	dataframe.fillna(method='ffill', inplace=True)
-	#values = {'apoe': 0, 'educrenta': 3, 'nivel_educativo': 2, 'anos_escolaridad': 8}
-	#dataframe.fillna(value=values)
-
-	#Select SelectKBest features
-	target = 'conversionmci'
+	# columns selection
 	predictors = genetics + demog + antr + sleep + social + engagement + diet + phys + cardio + tbi + psy + scd + qol
-	print(dataframe[predictors].info())
-	atleast2visits = dataframe['conversionmci'].notna()
 	# remove features with low variance
 	lowvar_features = remove_features_lowvariance(dataframe[predictors])
 	predictors = [elem for elem in predictors if elem not in lowvar_features]
-
+	print(dataframe[predictors].info())
+	
+	# rows selection	
+	if target is None:
+		target = 'conversionmci'
+	atleast2visits = dataframe['conversionmci'].notna()
 	X = dataframe[predictors][atleast2visits]
 	y = dataframe[target][atleast2visits]
 	#for sklearn to recognize y type (not object)
 	y = y.astype('int')
+
 	return X, y
 
 def	change_DkDa_features(df):
 	"""change_DkDa_features: replace 9 by distribution with proportion
 	"""
-	featureswithnines =['tce','arri','cor', 'ictus', 'lipid', 'tir',\
-	'sue_ron', 'sue_rui', 'sue_hor','sue_mov','sue_pro','sue_suf','sue_rec']
+	featureswithnines =['ansi', 'tce','arri','cor', 'ictus', 'lipid', 'tir',\
+	'sue_con', 'sue_man','sue_ron', 'sue_rui', 'sue_hor','sue_mov','sue_pro','sue_suf','sue_rec']
 	dfo = df.copy()
 	for feat in featureswithnines:
 		print(df[feat].value_counts())
@@ -639,19 +747,338 @@ def	change_DkDa_features(df):
 	return df
 
 def castdf_to_int(dataframe):
+	"""
+	"""
 
 	dataframe['conversionmci'] = pd.Series(dataframe['conversionmci'],dtype='Int64')
 	dataframe['apoe'] = pd.Series(dataframe['apoe'],dtype='Int64')
 	#dataframe['educrenta'] = pd.Series(dataframe['educrenta'],dtype='Int64')
-	dataframe['numero_barrio'] = pd.Series(dataframe['numero_barrio'],dtype='Int64')
-	dataframe['numero_distrito'] = pd.Series(dataframe['numero_distrito'],dtype='Int64')
+	#dataframe['numero_barrio'] = pd.Series(dataframe['numero_barrio'],dtype='Int64')
+	#dataframe['numero_distrito'] = pd.Series(dataframe['numero_distrito'],dtype='Int64')
 	dataframe['nivel_educativo'] = pd.Series(dataframe['nivel_educativo'],dtype='Int64')
 	dataframe['anos_escolaridad'] = pd.Series(dataframe['anos_escolaridad'],dtype='Int64')
 	dataframe['lat_manual'] = pd.Series(dataframe['lat_manual'],dtype='Int64')
-	dataframe['edad_ultimodx'] = pd.Series(dataframe['edad_ultimodx'],dtype='Int64')
-	dataframe['edad_visita1'] = pd.Series(dataframe['edad_visita1'],dtype='Int64')
+	#dataframe['edad_ultimodx'] = pd.Series(dataframe['edad_ultimodx'],dtype='Int64')
+	dataframe['edad_visita1'] = pd.Series(dataframe['edad_visita1'],dtype='Int64', inplace=True)
 
 	return dataframe
+
+def split_training_test_sets(df, target_label,test_size=None):
+	"""
+	"""
+	# Split data into features and target
+	labels = np.array(df[target_label])
+
+	# Remove the labels from the features
+	features= df.drop(target_label, axis = 1)
+	feature_list = list(features.columns)
+	features = np.array(features)
+	
+	#Split data into training and testing sets
+	if test_size is None:
+		test_size = 0.25
+	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size=test_size, stratify=labels, random_state=42)
+	print('Train Features Shape:', train_features.shape, '. Train Labels Shape:', train_labels.shape)
+	print('Test Features Shape:', test_features.shape, '. Test Labels Shape:', test_labels.shape, '\n')
+	print('Train_labels class distribution')
+	y = np.bincount(train_labels)
+	ii = np.nonzero(y)[0]
+	print(np.vstack((ii,y[ii])).T)
+	print('Train labels ratio of 1/0s: %.4f' %(y[ii][-1]/y[ii][0]))
+
+	print('Test_labels class distribution')
+	y = np.bincount(test_labels)
+	ii = np.nonzero(y)[0]
+	print(np.vstack((ii,y[ii])).T)
+	print('Test labels ratio of 1/0s: %.4f' %(y[ii][-1]/y[ii][0]))
+	return train_features, test_features, train_labels, test_labels
+
+
+def evaluate_model(model, X_test, y_test):
+	"""
+	"""	
+	predictions = model.predict(X_test)
+
+	accuracy = metrics.accuracy_score(y_test.tolist(), predictions.tolist())
+	precision = metrics.precision_score(y_test.tolist(), predictions.tolist())
+	recall = metrics.recall_score(y_test.tolist(), predictions.tolist())
+	f1 = metrics.f1_score(y_test.tolist(), predictions.tolist())
+	print('The RF accuracies :', accuracy)
+	print('The RF precision:', precision)
+	print('The RF recalls :', recall)
+	print('The RF f1s :', f1)
+
+def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
+
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
+	figname = 'PR_thr.png'
+	plt.figure(figsize=(8, 8))
+	plt.title("Precision and Recall Scores as a function of the decision threshold")
+	plt.plot(thresholds, precisions[:-1], "b--", label="Precision")
+	plt.plot(thresholds, recalls[:-1], "g-", label="Recall")
+	plt.ylabel("Score")
+	plt.xlabel("Decision Threshold")
+	plt.legend(loc='best')
+	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
+	plt.show(block=False)
+	plt.pause(3)
+	plt.close()
+
+def plot_roc_curve(y_test,y_scores):
+	"""
+	"""
+	# method I: plt
+
+	matplotlib.use('tkagg')
+	
+	fpr, tpr, auc_thresholds = roc_curve(y_test, y_scores)
+	roc_auc = auc(fpr, tpr)
+	print('roc_auc = %.4f' %(roc_auc)) # AUC of ROC
+	
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
+	figname = 'roc_curve2.png'
+	plt.figure(figsize=(8,8))
+	plt.title('ROC Curve')
+	plt.plot(fpr, tpr, linewidth=2, label= 'AUC = %0.2f' % roc_auc)
+	plt.plot([0, 1], [0, 1], 'k--')
+	plt.axis([-0.005, 1, 0, 1.005])
+	plt.xticks(np.arange(0,1, 0.05), rotation=90)
+	plt.xlabel("False Positive Rate")
+	plt.ylabel("True Positive Rate (Recall)")
+	plt.legend(loc='best')
+	plt.savefig(os.path.join(figures_dir, figname), dpi=480,bbox_inches='tight')
+	plt.show(block=False)
+	plt.pause(3)
+	plt.close()
+	
+def report_evaluation_metrics(clf, X_test, y_test, y_scores):
+	"""report of results for different optimization metrics 
+	Args:clf, X_test, y_test
+	Output:None
+	"""
+	
+	#clf_best = clf.best_estimator_
+	#pprint(clf_best)
+	#y_scores2 = clf_best.predict(X_test) 
+	#np.array_equal(y_scores, y_scores2)
+	print(pd.DataFrame(confusion_matrix(y_test, y_scores),columns=['pred_neg', 'pred_pos'], index=['neg', 'pos']))
+	avg_prec = average_precision_score(y_test, y_scores)  
+	print('\t Average precision score is=%.4f' %(avg_prec))
+	roc_score = roc_auc_score(y_test, y_scores)
+	print('\t ROC score is=%.4f' %(roc_score)) 
+	prec_sc = precision_score(y_test, y_scores)  
+	print('\t Precision score is=%.4f' %(prec_sc))
+	f1_sc = f1_score(y_test, y_scores)
+	print('\t f1 score is=%.4f' %(f1_sc))
+	accuracy_sc = accuracy_score(y_test, y_scores)  
+	print('\t Accuracy score is=%.4f' %(accuracy_sc))
+	recall_sc = recall_score(y_test, y_scores)
+	print('\t Recall score is=%.4f' %(recall_sc)) 
+	#precision_score, f1_score, accuracy_score, recall_score,\confusion_matrix,roc_auc_score, roc_curve, auc, classification_report ,precision_recall_curve,\make_scorer, average_precision_score
+
+def plot_precision_recall_curve(y_test, y_scores, clf=None):
+	"""plot_precision_recall_curve : Compute precision-recall pairs for different probability thresholds
+	Output: precision, recall, thresholds
+	Precision values such that element i is the precision of predictions with score >= thresholds[i] and the last element is 1.
+	Decreasing recall values such that element i is the recall of predictions with score >= thresholds[i] and the last element is 0.
+	Increasing thresholds on the decision function used to compute precision and recall.
+	"""
+	from inspect import signature
+	import matplotlib
+	matplotlib.use('TkAgg')
+	if isinstance(y_scores[0], float):
+		proba = '_proba_'
+	else:
+		proba = '_01_'
+	print('PR curve for probabilitic predictions\n')
+	average_precision = average_precision_score(y_test, y_scores)  
+	precision, recall, _ = precision_recall_curve(y_test, y_scores)
+	# In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
+	step_kwargs = ({'step': 'post'}
+               if 'step' in signature(plt.fill_between).parameters
+               else {})
+	plt.step(recall, precision, color='b', alpha=0.2,
+         where='post')
+	plt.fill_between(recall, precision, alpha=0.2, color='b', **step_kwargs)
+	# plot the current threshold on the line
+	#t = 0.5
+	#close_default_clf = np.argmin(np.abs(_ - t))
+	#plt.plot(recall[close_default_clf], precision[close_default_clf], '^', c='k',markersize=15)
+	plt.xlabel('Recall')
+	plt.ylabel('Precision')
+	plt.ylim([0.0, 1.05])
+	plt.xlim([0.0, 1.0])
+	plt.title('2-class Precision-Recall curve: AvgP={0:0.2f}'.format(
+          average_precision))
+	
+	if True is True:
+		f_scores = np.linspace(0.2, 0.8, num=4)
+		lines = []
+		labels = []
+		for f_score in f_scores:
+			x = np.linspace(0.01, 1)
+			y = f_score * x / (2 * x - f_score)
+			l, = plt.plot(x[y >= 0], y[y >= 0], color='gray', alpha=0.2)
+			plt.annotate('f1={0:0.1f}'.format(f_score), xy=(0.9, y[45] + 0.02))
+
+		lines.append(l)
+		labels.append('iso-f1 curves')
+		l, = plt.plot(recall, precision, color='gold', lw=2)
+		lines.append(l)
+		average_precision = average_precision_score(y_test, y_scores) 
+		labels.append('Precision-recall (area = {0:0.2f})'''.format(average_precision))
+		plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
+
+	print('Saving PR curve ')
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
+	if clf is not None:
+		figname = 'PR_curve' + proba + str(clf.get_params()['n_estimators']) +'_' + str(clf.get_params()['max_features']) +'.png'
+	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
+	plt.show(block=False)
+	plt.pause(3)
+	plt.close()
+	return precision, recall, _
+
+def adjusted_classes(y_scores, t):
+    """
+    This function adjusts class predictions based on the prediction threshold (t).
+    Will only work for binary classification problems.
+    """
+    return [1 if y >= t else 0 for y in y_scores]
+
+
+def grid_search_wrapper(X_train, y_train, X_test, y_test,refit_score, param_grid=None, scorers=None):
+    """
+    fits a GridSearchCV classifier using refit_score for optimization
+    prints classifier performance metrics
+    """
+
+    skf = StratifiedKFold(n_splits=3)
+    clf = RandomForestClassifier(n_jobs=6)
+    if param_grid is None:
+    	param_grid = create_dict_hyperparameters()
+    if scorers is None:
+    	scorers = create_dict_scorers()	
+    grid_search = GridSearchCV(clf, param_grid, scoring=scorers, refit=refit_score,
+                           cv=skf, return_train_score=True, n_jobs=6)
+    grid_search.fit(X_train, y_train)
+
+    # make the predictions
+    y_pred = grid_search.predict(X_test)
+
+    print('Best params for {}'.format(refit_score))
+    print(grid_search.best_params_)
+
+    # confusion matrix on the test data.
+    print('\nConfusion matrix of Random Forest optimized for {} on the test data:'.format(refit_score))
+    print(pd.DataFrame(confusion_matrix(y_test, y_pred),columns=['pred_neg', 'pred_pos'], index=['neg', 'pos']),'\n')
+    
+    #visualize the scores and parameters for each classifier iteration.
+    results = pd.DataFrame(grid_search.cv_results_)
+    results = results.sort_values(by='mean_test_recall_score', ascending=False)
+    results[['mean_test_recall_score', 'mean_test_precision_score', 'mean_test_accuracy_score', 'param_max_depth', 'param_max_features', 'param_min_samples_split', 'param_n_estimators']].round(3).head()
+    return grid_search
+	
+
+def create_random_grid():
+	"""
+	"""
+	# Number of trees in random forest
+	n_estimators = [int(x) for x in np.linspace(start = 10, stop = 10000, num = 100)]
+	n_estimators = [10,100,1000,5000,10000,100000]
+	# Number of features to consider at every split
+	max_features = ['auto', 'sqrt']
+	# Maximum number of levels in tree
+	max_depth = [int(x) for x in np.linspace(2, 8, num = 4)]
+	max_depth.append(None)
+	# Minimum number of samples required to split a node
+	min_samples_split = [5, 10]
+	# Minimum number of samples required at each leaf node
+	min_samples_leaf = [2, 4]
+	# Method of selecting samples for training each tree
+	bootstrap = [True, False]
+	class_weight = [None, 'balanced']
+	# Create the random grid
+	random_grid = {'n_estimators': n_estimators,'max_features': max_features,\
+	'max_depth': max_depth,'min_samples_split': min_samples_split,'min_samples_leaf': \
+	min_samples_leaf,'bootstrap': bootstrap, 'class_weight':class_weight}
+
+	pprint(random_grid)
+	# Number of trees in random forest
+	#param_grid = {'bootstrap': [True],'max_depth': [80, 90, 100, 110],'max_features': [2, 3],'min_samples_leaf': [3, 4, 5],'min_samples_split': [8, 10, 12],'n_estimators': [100, 200, 300, 1000]}
+	return random_grid
+
+def print_classsifier_parameters(clf):
+	"""
+	"""
+
+	# Look at parameters used by our current forest
+	print('Parameters currently in use:\n')
+	pprint(clf.get_params())
+
+def create_dict_hyperparameters():
+	"""
+	"""
+	#param_grid = {'class_weight':[None, 'balanced'], 'min_samples_leaf':[3, 6], 'min_samples_split':[3, 5, 10], 'n_estimators':[100, 1000, 10000],'max_depth': [3, 5, 7], 'max_features': [3, 5, 10, 20]}
+	#param_grid = {'class_weight':[None, 'balanced'], 'min_samples_leaf':[ 12,14,16],'min_samples_split':[6,8,10],'n_estimators':[1000, 10000]}
+	param_grid = {'class_weight':['balanced'], 'min_samples_leaf':[6], 'min_samples_split':[5], 'n_estimators':[1000],'max_depth': [5], 'max_features': [3]}
+	pprint(param_grid)
+	return param_grid
+
+def create_dict_scorers():
+	"""
+	"""
+	
+	# Look at parameters used by our current forest
+
+	scorers = {
+	'precision_score': make_scorer(precision_score),
+	'recall_score': make_scorer(recall_score),
+	'accuracy_score': make_scorer(accuracy_score),
+	'f1_score': make_scorer(f1_score)
+	}
+	
+	pprint(scorers)
+	return scorers
+
+
+def train_RF(X_train, y_train, X_test, y_test):
+	"""
+	"""
+	from sklearn.ensemble import RandomForestClassifier
+
+	n_estimators = 10000
+	rf = RandomForestClassifier(n_estimators = n_estimators, class_weight='balanced_subsample',\
+	 min_samples_leaf=5, min_samples_split=10, bootstrap=True,max_features = 10, max_depth=3, verbose=1, random_state = 42)
+	print_classsifier_parameters(rf) 
+	rf.fit(X_train, y_train)
+	return rf 
+
+def dataset_cleanup(dataframe):
+	"""end2end_data_preparation: remove Dont know dont ask, remove redundant features
+								convert float into int 
+	""" 
+	# Descriptive statistics for each column
+	dataframe.describe()	
+	# remove redundant features ['nivelrenta', 'educrenta']
+	#dataframe = remove_features_redundant(dataframe)
+	# replace features dont know dont answer 9
+	dataframe = change_DkDa_features(dataframe)
+	# cast to int some features eg conversionmci
+	# dataframe = castdf_to_int(dataframe)
+	dataframe.describe()
+	return dataframe
+
+def translate_PVfeatures(features_spa):
+	"""
+	"""
+	features_eng = []
+	for i in range(0,len(features_spa)):
+		if str(features_spa[i] == 'apoe') or str(features_spa[i] == 'familial_ad') :
+			features_eng += features_spa[i]
+
+
+		return features_eng
 
 ##################################################################################
 ##################################################################################
@@ -659,36 +1086,93 @@ def castdf_to_int(dataframe):
 ##################################################################################
 ##################################################################################
 def main():
+
 	#importlib.reload(JADr_paper);import JADr_paper; JADr_paper.main()
 	print('Code for JADr paper on Feature Selection to Build the Vallecas Index\n')
 	# open csv with pv databse
 	plt.close('all')
 	csv_path = '~/vallecas/data/BBDD_vallecas/Vallecas_Index-Vols134567-22April2019.csv'
+
 	figures_path = '/Users/jaime/github/papers/EDA_pv/figures/'
 	dataframe = pd.read_csv(csv_path)
 	# Copy dataframe with the cosmetic changes e.g. Tiempo is now tiempo
 	dataframe_orig = dataframe.copy()
 	print('Build dictionary with features ontology and check the features are in the dataframe\n') 
-	
-	# remove redundant features ['nivelrenta', 'educrenta']
-	# replace features dont know dont answer 9
-	dataframe = change_DkDa_features(dataframe)
-	dataframe = remove_features_redundant(dataframe)
-	# cast to int some features eg conversionmci
-	dataframe = castdf_to_int(dataframe)
-
-	#features_dict is the list of clusters, the actual features to plot are hardcoded
+	# features_dict is the list of clusters, the actual features to plot are hardcoded
 	features_dict = vallecas_features_dictionary(dataframe)
+	# Prepare the dataset
+	target_label = 'conversionmci'
+	X,y = select_PVdictio(dataframe, features_dict,target_label)
+	X = dataset_cleanup(X)
+	toq = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal','edad_visita1']
+	X = encode_in_quartiles(X, toq)
+	df_pv = X.copy()
+	df_pv[y.name] = y
+	# split train and test sets
+	test_size = 0.25
+	[X_train, X_test, y_train, y_test] = split_training_test_sets(df_pv, target_label, test_size)
+	#X_train = X_train.astype('int')
+	#X_test = X_test.astype('int')
+	y_train = y_train.astype('int')
+	y_test = y_test.astype('int')
+	
+	# set the goal about how good our classifier must be
+	dummy_preds = baseline_classifier(X_train, y_train, X_test, y_test)
+	for dummy in dummy_preds:
+		pprint(dummy)
+		evaluate_model(dummy, X_test, y_test)
+		print('\n')
+
+	# build model and tuning model
+	grid_search_clf = grid_search_wrapper(X_train, y_train, X_test, y_test,refit_score='precision_score')
+	clf_best = grid_search_clf.best_estimator_
+	# report_evaluation_metrics(grid_search_clf, X_test, y_test)
+	# Prediction y_scores [0,1]
+	y_scores = clf_best.predict(X_test) 
+	report_evaluation_metrics(clf_best, X_test, y_test, y_scores)
+	
+	print('Probabilistc prediction y_score Real numbers and binarized with threshold \n')	
+	y_scores = clf_best.predict_proba(X_test)[:,1]
+	# Binarize predictions R \to [0,1] with threshold
+	y_pred_adj = adjusted_classes(y_scores, 0.47)
+	report_evaluation_metrics(clf_best, X_test, y_test, y_pred_adj)
+	precision, recall, threshold = plot_precision_recall_curve(y_test,y_scores,clf_best)
+	
+	#plot_iso_f1_curves(recall, precision, y_test, y_scores)
+
+	plot_precision_recall_vs_threshold(precision, recall, threshold)
+	plot_roc_curve(y_test,y_scores)
+	return
+	
+	
+		
+
+
+	# train and evaluate base model RF no Hyperparameter tunning
+	rf = train_RF(X_train, y_train, X_test, y_test)
+	report_evaluation_metrics(rf, X_test, y_test, y_scores)
+	[importances, indices_imp, columns_imp, importances_imp, std] = plot_rf_score(X,y,rf, 14)
+	
+	#visualize_DTfromRF(rf,df_pv.columns ,y.name)
+	importances = list(rf.feature_importances_)
+	# List of tuples with variable and importance
+	feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(X.columns, importances)]
+
+	# Sort the feature importances by most important first
+	feature_importances = sorted(feature_importances, key = lambda x: x[1], reverse = True)
+
+	# Print out the feature and importances 
+	[print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances];
+	pdb.set_trace()
+
 	# select rows with 5 visits
 	visits=['tpo1.2', 'tpo1.3','tpo1.4', 'tpo1.5','tpo1.6']
 	df_loyals = select_rows_all_visits(dataframe, visits)
-	pdb.set_trace()
 	#Feature Selection using three different methodoloies: Filtering (intrinsic) 
 	#and model based : Wrapping (RFEF, GA) and Embedded(RF, Regularization)
 	##########################
 	# Filtering ###
 	##########################
-	X, y = prepare_df(dataframe, features_dict)
 	# test for correct transformation of Real features ['renta', 'pabd', 'talla', 'imc', 'peso']
 	toq = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal','edad_visita1']
 	X = encode_in_quartiles(X, toq)
@@ -706,8 +1190,8 @@ def main():
 	##########################
 	#remove apoe
 	#X = X.drop('apoe', axis=1)
-	print('Wrapping methods (SVC LogReg), for Feature Selection \n')
-	feature_selection_wrapping(X, y, nboffeats)
+	#print('Wrapping methods (SVC LogReg), for Feature Selection \n')
+	#feature_selection_wrapping(X, y, nboffeats)
 	
 	##########################
 	# Embedded (RF) ###

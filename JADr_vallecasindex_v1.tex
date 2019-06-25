@@ -3,6 +3,14 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{multirow}
+\usepackage[section]{placeins}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{tabularx}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\usepackage{longtable}
 %% Use the option review to obtain double line spacing
 %% \documentclass[preprint,review,12pt]{elsarticle}
 
@@ -31,7 +39,7 @@
 %% The lineno packages adds line numbers. Start line numbering with
 %% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
 %% for the whole article with \linenumbers after \end{frontmatter}.
-\usepackage{lineno}
+%\usepackage{lineno}
 
 %% natbib.sty is loaded by default. However, natbib options can be
 %% provided with \biboptions{...} command. Following options are
@@ -120,7 +128,7 @@ Mild cognitive impairment \sep  Alzheimer's disease \sep Subjective cognitive de
 %%
 %% Start line numbering here if you want
 %%
-\linenumbers
+%\linenumbers
 
 %% main text
 \section{Introduction}
@@ -135,8 +143,9 @@ In order to better understand this variability we need to take into account a nu
 
 Testing memory and thinking skills in a large elderly population and in regular basis, rather than when memory loss starts to occur, might help us understand the role played by fluctuations between normal and MCI conditions in the risk of later developing dementia. The systematic examination, via for example cognitive testing, brain imaging techniques or gene expression profiling, of a very large of pool subjects is in all cases extremely costly. Prior or in addition to such an effort it is worth collecting information variables that can be directly assessed by the individuals and that could have an effect on cognitive impairment, such as life style, demographic, diet, sleep patterns or subjective memory complaints. 
 
-In this work we use the dataset collected in \emph{The Vallecas Project}, the most ambitious longitudinal population-based study for healthy aging in Spain. For the reasons just discussed, we focus on features collected in \emph{The Vallecas Project} that can be self assessed by the participants and within this set of variables, we study the most important features for MCI conversion using statistical and machine learning techniques. 
-The methodology of this feature selection problem is described in Section \ref{se:mandm} wherein Random Forest, the machine learning technique of choice for the study of feature importance is explained.
+In this work we use the dataset collected in \emph{The Vallecas Project}, the most ambitious longitudinal population-based study for healthy aging in Spain. For the reasons just discussed, we focus on features \footnote{The terms feature and variable are here used indistinctly. The former is the usual denomination in  machine learning and the last in statistics.} collected in \emph{The Vallecas Project} that can be self assessed by the participants and within this set of variables. Self-assessed features are variables that can be reported by the subject herself e.g. age, income level, education, sleep, diet, physical exercise etc.
+
+We study the most important self-reported features for MCI conversion using statistical and machine learning techniques. The methodology of this feature selection problem is described in Section \ref{se:mandm} wherein Random Forest, the machine learning technique of choice for the study of feature importance is explained.
 % together with alternative approaches for feature selection, namely filter and recursive methods. 
 Section \ref{se:res} describes \emph{The Vallecas Index} i.e. the selection of the most important self-assessed features for conversion to MCI in the \emph{The Vallecas Project} dataset. Finally, in the last Section \ref{se:dis}, we discuss the uses of machine learning techniques applied to lifestyle data for dementia prediction, with especial emphasis on the opportunities that this approach hold for patient self management and empowerment. 
 %The study results are supported by the Supplementary Materials Section. 
@@ -144,101 +153,293 @@ Section \ref{se:res} describes \emph{The Vallecas Index} i.e. the selection of t
 \section{Materials and Methods}
 \label{se:mandm}
 
-The main objective of \emph{The Vallecas Project} is to elucidate the best combination of features, clinical and others that are informative about developing cognitive impairment in the future.
+\emph{The Vallecas Project} started in the end of 2011, the cohort size was 1203 subjects aged 70 or older. The main objective of the project is to elucidate the best combination of features, clinical and others that are informative about developing cognitive impairment in the future. 
 \emph{The Vallecas Project} dataset includes information about a wide range of factors including magnetic resonance imaging, genetic, demographic, socioeconomic, cognitive performance, subjective cognitive decline, neuropsychiatric disorders, cardiovascular, sleep, diet, physical exercise and self assessed quality of life. The subjects in each visit were diagnosed as healthy, mild cognitive impairment (MCI) or dementia.
-Table \ref{tab:pvall} shows the self-assessed features collected in \emph{The Vallecas Project} useful for the study of \emph{The Vallecas Index}.
-
+The total number of subjects recruited for \emph{The Vallecas Project} was 1203, 31 of them were diagnosed with AD in their first visit and were removed from the project. The number of active subjects has decreased across the years, 964 subjects came to the second visit, 865 in year 3, 773 in year 4, 704 in year 5 and 509 in year 6, the last yearly visited completed. The project at the time of writing (15/06/2019) is running the 7th and 8th visits. 
+ 
 %YS do the table
+For this study and we focus on features that are self-assessed by the participants in \emph{The Vallecas Project} for the completed visits (visit 1 to visit 6). Table \ref{tab:pvall} shows the self-assessed features collected in \emph{The Vallecas Project} useful for the study of \emph{The Vallecas Index}. The complete description of the dataset is included in the Supplementary Materials \ref{}.
 
-\begin{tabular}{ |p{5cm}||p{8cm}|  }
+The feature selection engine has as input the set of self-assessed features measured in year 1 and as output target the conversion to MCI diagnosis in the latest available visit. For example, a subject that came to only the first and second visit, the input is the set of self-assessed features in year 1 and the output is conversion in year 2. On the other hand, a subject that came to visits 1,2 and 6, the input is invariably the set of self-assessed features in year 1 and the output target is conversion in the last available year, year 6. %This is graphically represented in Figure \ref{}.
+Our goal is to study the most important features to predict conversion to MCI using Random Forests and compare the results with standard linear procedures. We select the most important self-assessed features for conversion to MCI for subjects that have at least 2 visits (964 subjects). The number of subjects that converted to MCI is 156 subjects ($~17\%$ conversion rate). 
 
- \hline
- \multicolumn{2}{|c|}{Country List} \\
- \hline
- \multirow{2}{*}{Demographics} & \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF } \\
- \hline
- \multirow{2}{*}{Neuropsychiatric} & \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF } \\ 
- \hline
- \multirow{ 2}{*}{Cognitive Performance}&   \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
- \hline
- Quality of Life &\multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }L \\
- \hline
- Engagement External World &\multirow{2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF } \\
- \hline
- Diet& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
- \hline
- Physical Exercise& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
- \hline
- Cardiovascular& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
- \hline
- TraumaticBrainInjury & \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\ 
- \hline
- Social Engagement& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
- \hline
-  Anthropometric& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
- \hline
- Diagnoses& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
- \hline
+\begin{table}[h!]
+  \begin{center}
+   \caption{Feature types used in the Vallecas Index, each category contains several features.}
+    \label{tab:pvall}
+\begin{tabular}{ |p{6cm}||p{6cm}|  }
+\hline
+Demographics & Anthropometric\\
+\hline
+Neuropsychiatric & Diet\\
+\hline
+Cardiovascular & Quality of Life\\
+\hline
+Engagement External World & Physical Exercise\\
+\hline
+Social Engagement & Traumatic Brain Injury\\
+\hline
+Sleep & Subjective Cognitive Decline\\
+\hline
+%\caption{PV features}
 \end{tabular}
+\end{center}
+\end{table}
+%Demographics_s ['renta', 'numero_barrio', 'numero_distrito', 'sexo', 'nivel_educativo', 'anos_escolaridad', 'sdestciv', 'sdhijos', 'numhij', 'sdvive', 'sdocupac', 'sdresid', 'sdtrabaja', 'sdeconom', 'sdatrb', 'edad_visita1']
+%PsychiatricHistory_s': ['depre', 'depre_ini', 'depre_num', 'depre_trat', 'ansi', 'ansi_ini', 'ansi_num', 'ansi_trat']
+%Diet 'alaves','alcar', 'aldulc', 'alemb', 'alfrut', 'alhuev', 'allact', 'alleg','alpan', 'alpast', 'alpesblan', 'alpeszul', 'alverd'
+%['hta', 'hta_ini', 'glu', 'lipid', 'tabac', 'tabac_cant', 'tabac_fin', 'tabac_ini', 'sp', 'cor', 'cor_ini', 'arri', 'arri_ini', 'card', 'card_ini', 'tir', 'ictus', 'ictus_num', 'ictus_ini', 'ictus_secu']
+%'eqm06_visita1','eqm07_visita1', 'eqm81_visita1', 'eqm82_visita1', 'eqm83_visita1','eqm85_visita1', 'eqm09_visita1', 'eqm10_visita1', 'eq5ddol_visita1','valfelc2_visita1', 'eq5dsalud_visita1'
+%'EngagementExternalWorld_s': ['a01', 'a02', 'a03', 'a04', 'a05', 'a06', 'a07', 'a08', 'a09', 'a10', 'a11', 'a12', 'a13', 'a14']
+%SocialEngagement_s': ['relafami', 'relaamigo', 'relaocio_visita1', 'rsoled_visita1']
+% scd = ['scd_visita1','act_aten_visita1', 'peorotros_visita1','act_orie_visita1',
+%'act_mrec_visita1','act_expr_visita1','act_prax_visita1','act_ejec_visita1','act_comp_visita1',\
+%    'act_visu_visita1','eqm06_visita1','eqm07_visita1','eqm81_visita1','eqm82_visita1','eqm83_visita1',\
+%    'eqm84_visita1','eqm85_visita1','eqm86_visita1','eqm09_visita1','eqm10_visita1']
+% %'scd_visita1','act_aten_visita1', 'peorotros_visita1', 'act_mrec_visita1','act_expr_visita1'
+%YS; DELETE 'card', 'sdresid' 'a07', 'a14'
 
-The dataset of the \emph{Vallecas Project} used here is of the order of 1,000 samples and can arguably be considered to fall within the small-medium class category. We select the subset of most important features that can be self assessed by the participants and within this set, we study the most important features for MCI conversion. This set of ranked variables defines \emph{The Vallecas Index}. 
+%REMOVED Features for Low variance:  Index(['sdhijos', 'act_orie_visita1', 'act_prax_visita1', 'act_ejec_visita1','act_comp_visita1', 'act_visu_visita1', 'eqm84_visita1','eqm86_visita1', 'eq5dmov_visita1'],dtype='object')
 
-We select the most important self-assessed features for conversion to MCI for subjects that have at least 2 visits (920 subjects). In year 1, 1281 subjects were recruited, 31 were diagnosed with AD and were removed from the project. 920 subjects came to the second visit. The project is currently in its  8th year (visits 1,2,3,4,5,6 are completed and visits 7 and 8 are still ongoing). 
-We study the most important features to predict conversion to MCI using Random Forests, having as input the  set of self-assessed features measured in year 1, and as output target the conversion to MCI diagnosis in the latest available visit. For example, a subject that came to only the first and second visit, the input is the set of features observed in year 1 and the output is conversion in year 2. A subject that came to visits 1,2 and 3, the input is invariably the set of features observed in year 1 and the output target is conversion in year 3. This is graphically represented in Figure \ref{}.
-The complete description of the dataset is included in the Supplementary Materials \ref{}
+%YS: span multiple pages table
+%https://tex.stackexchange.com/questions/165793/how-to-make-a-table-on-more-than-one-page-by-using-the-table-environment
 
+\begin{table}[ht]
+\caption{Self-assessed features of \emph{Vallecas Project}}
+\begin{center}
+%\begin{longtable}{|l|l|l|}
+\begin{tabularx}{\linewidth}{L L L}
+	Type&Name&Description\\
+    \hline
+    \multirow{12}{*}{Demographics}
+    &age&age year 1 $\mathbb Z_{\ge 0}$\\ %sdocupac YS
+    &income&average income by zip code $\mathbb R_{> 0}$\\
+    &sex&male or female\\ %sexo
+    &educational level&[None, primary, secondary, university]\\ %nivel_educativo
+    &years of schooling&$\mathbb Z_{\ge 0}$\\ %anos_escolaridad
+    &marital status&single, married, widow, divorced\\ %sdestciv
+    &sons and daughters&$\mathbb Z_{\ge 0}$\\ %numhij
+    &household composition&[alone, in couple, with family, with carer]\\ %sdvive $\mathbb Z_{\ge 0}$
+    &profession&$\mathbb Z_{\ge 0}$\\ %sdocupac YS
+    &population residence&$\mathbb Z_{\ge 0}$\\ %sdresid YS
+    &an employee&[0,1]\\ %sdresid YS
+    &socio-econ.status&$\mathbb Z_{\ge 0 \le 10}$\\ %sdeconom YS 1,10
+    &years an employee&$\mathbb Z_{\ge 0}$\\ %sdeconom YS 1,10
+    \hline
+    
+    \multirow{7}{*}{Anthropometric}
+    &lat-manual&right,left handed [0,1,2]\\
+    &pabd&perimeter of the abdomen $\mathbb R_{> 0}${$cm$}\\
+    &weight&weight year 1 $\mathbb R_{> 0}${$kg$}\\
+    &height&height year 1 $\mathbb R_{> 0}${$m$}\\
+    &audi&auditory deficit [0,1]\\
+    &visual&Visual deficit [0,1]\\
+    &bmi&body mass index year 1 $\mathbb R_{> 0}$\\
+    \hline
+    
+    \multirow{2}{*}{Neuropsychiatric}
+    &depression&suffered from depression [0,1]\\
+    &anxiety&suffered from anxiety [0,1]\\
+    \hline
+    
+    \multirow{12}{*}{Diet}
+    &red-meat &consumption days/week [1-2,3-5,6-7]\\
+    &sweets &days/week eat sweets [1-2,3-5,6-7]\\
+    &charcuterie &days/week eat charcuterie [1-2,3-5,6-7]\\
+    &white-meat &days/week eat white meat [1-2,3-5,6-7]\\
+    &fruits &days/week eat fruits [1-2,3-5,6-7]\\
+    &eggs &days/week eat eggs [1-2,3-5,6-7]\\
+    &dairy &days/week eat dairy [1-2,3-5,6-7]\\
+    &legumes &days/week eat legumes [1-2,3-5,6-7]\\
+    &bread &days/week eat bread [1-2,3-5,6-7]\\
+    &pasta &days/week eat pasta [1-2,3-5,6-7]\\
+    &white-fish &days/week eat white fish [1-2,3-5,6-7]\\
+    &blue-fish &days/week eat blue fish [1-2,3-5,6-7]\\
+    &vegetables &days/week eat vegetables [1-2,3-5,6-7]\\
+    \hline
 
-\subsection{Automated Feature Selection methods}
-The goal of a feature selection algorithm is to find an optimal set of features according to a evaluation metric. Depending on the evaluation metric, we can distinguished between three methodologies of automated feature selection, namely filter, wrapper and embedded, all three can be use to remove the non essential features for the talk of predicting new values of the target feature.
+    \multirow{6}{*}{Cardiovascular}
+    &hbp&high blood pressure [0,1]\\ %hta
+    &glucose&glucose metabolism [0,1,2]\\ %glu
+    &dyslipidemia&dyslipidemia [0,1,2,3]\\ %lipid
+    &tobacco&smoker now or past[0,1]\\ %tabac 
+    &heart&no heart problem, angina, infarct [0,1,2]\\ %cor
+    &arrythmia&No Arrhythmia, Atrial fibrillation, Arrhythmia [0,1,2]\\ %arri
+    \hline
+    
+    \multirow{10}{*}{Quality of Life}
+    %&mob to&today's mobility[1,2,3]\\ %eq5dmov_visita1 remobed for low variability
+    &pain&today's pain[1,2,3]\\ %eq5ddol
+    &happiness&today's happiness[1,2,3,4]\\ %valfelc2_visita1_visita1
+    &health-cmp&well being compared with last year[1,2,3]\\ %eq5dsalud_visita1
+    &mem-lo-how&how is memory loss (slowly,suddenly, DK/DA)  [1,2,3]\\ %eqm06_visita1 
+    &mem-lo-rec&difficulty retaining recent info [0,1]\\ %eqm07_visita1
+    &mem-lo-conv&memory loss affects remember recent conversations [0,1]\\ %eqm81_visita1
+    &mem-lo-pp&memory loss affects remember people/places [0,1]\\ %eqm82_visita1
+    &mem-lo-obj&memory loss affects remember objects names [0,1]\\ %eqm83_visita1
+    &mem-lo-dai&memory loss affects daily activity [1,2,3,4,5]\\ %eqm10_visita1_visita1
+    &mem-lo-obj-f&problems finding objects [0,1]\\ %eqm85_visita1
+    &mem-lo-wri&wrote notes to cope with memory loss [1,2,3]\\ %eqm09_visita1
+    \hline
+    
+    \multirow{12}{*}{Engagement External World}
+    &eew-sport&frequency doing sports [1,2,3]\\ %a01
+    &eew-recre&frequency doing recreational activities [1,2,3]\\ %a02
+    &eew-friends&frequency going out friends [1,2,3]\\%a03
+    &eew-travel&frequency travel/tourism [1,2,3]\\%a04
+    &eew-ngo&frequency NGOs activities [1,2,3]\\%a05
+    &eew-church&frequency church activities [1,2,3]\\%a06
+    %&eew-social&frequency social club activities [1,2,3]\\%a07
+    &eew-art&frequency art related (converts, expositions) [1,2,3]\\%a08
+    &eew-sport-e&frequency sport events activities [1,2,3]\\%a09
+    &eew-music&frequency listens to music [1,2,3]\\%a10
+    &eew-tv&frequency TV/radio [1,2,3]\\%a11
+    &eew-read&frequency read book/magazines [1,2,3]\\%a12
+    &eew-it&frequency internet [1,2,3]\\%a13
 
-We perform automated feature selection using \emph{Filter Methods} and embedded method (Random Forest). Results obtained with Filter and Wrapper methods are shown in the Supplementary Materials \ref{}. 
-\emph{Filter methods} pick up the intrinsic properties of the features estimated via an univariate correlation matrix. Filter methods are the linear approach to finding variables that contain most information about the target variable. Filter methods use statistical tests (e.g. chi-squared test, Fisher's exact test) or related quantities such as the correlation coefficient to determine, for example, the variables with variance above a certain threshold.
+    \hline
+    \multirow{1}{*}{Physical Exercise}
+    &phys&session $\times$ frequency {$min/week$}\\
+    \hline
 
-The algorithm \emph{SelectKBest} \cite{scikit-learn} uses a score function in order to remove all but the highest scoring features. \emph{SelectKBest} can take as score function the Fisher's test, the $\tilde{\chi}^2$ and the mutual information. 
+    \multirow{4}{*}{Social Engagement}
+    &rel-friends&frequency see friends [1..5]\\%relaamigo 
+    &rel-fami&freq. see family [1..5]\\ %relafami
+    &rel-leis&freq. leisure outside [1,2,3]\\%'relaocio_visita1'
+    &rel-lone&freq. felling alone [1,2,3]\\ %'rsoled_visita1'
+    
+    \hline
+    \multirow{1}{*}{Traumatic Brain Injury}
+    &tbi&episode(s) of TBI [0,1]\\
+    \hline
+    
+    \multirow{11}{*}{Sleep}
+    &sleep-dy&hrs. of diurnal sleep\\
+    &{sleep-ni}&hrs. of nocturnal sleep [0,1]\\
+    &{sleep-ti}&tickling while sleep [0,1]\\
+    &{sleep-mv}&moves while sleep [0,1]\\
+    &{sleep-dr}&dreams while sleep [0,1]\\
+    &{sleep-de}&deep sleep [0,1]\\
+    &{sleep-re}&remember dreams [0,1]\\
+    &{sleep-en}&enough sleep [0,1]\\
+    &{sleep-as}&problems to fall asleep [0,1]\\
+    &{sleep-in}&interruptions while sleep [0,1]\\
+    &{sleep-sn}&snores while sleep [0,1]\\
+    \hline
+    
+    \multirow{5}{*}{Subjective Cognitive Decline}
+    &scd&subjective cognitive decline $\mathbb Z_{\ge 0 \le 10}$\\ 
+    &s-attention&self perceived loss attention loss [0,1]\\
+    %'peorotros_visita1', 'act_mrec_visita1','act_expr_visita1'
+    &s-worse-others&feeling doing worse than others [0,1]\\ 
+    &s-attention&self perceived worsen memory [0,1]\\
+    &s-lang&self perceived worsen language expression [0,1]\\ 
+    \hline
 
-%YS Rule 1 to 10
-The answer to the question, How much training data do we need? is not straightforward and depends on a number of factors. For example, the type of model (linear or non-linear), the model accuracy we want to achieve, the quality of the data (signal to noise ratio), the number of inputs and so on.  
-Arguably, the size of the training data is an ill-posed question, however, data scientists have proposed heuristics to address the problem of estimating the amount of data required. One such heuristic is the \emph{one in ten} rule which states that the amount of data needed is 10 times the number of parameters in the model \cite{harrell2001reg}. 
-For example, according to the \emph{one in ten} rule of thumb, in a sample of 1,000 subjects whom 140 develop MCI, 14 parameters ($10\%$ of the minority class) can be reliably fitted to the total dataset. 
+\end{tabularx}
+\end{center}
+%\end{longtable}
+\label{tab:multicol}
+\end{table}
 
-The one in ten rule effectively transforms the problem of deciding about the size of the training set by that of knowing the number of parameters in the model. In the case of linear models this is a trivial task since the number of parameters is equal to the number of inputs. However, by including all the input features in the model we may be introducing multicollineariy (correlations between input variables). 
+% \begin{tabular}{ |p{5cm}||p{8cm}|  }
+
+%  \hline
+%  \multicolumn{2}{|c|}{Country List} \\
+%  \hline
+%  \multirow{2}{*}{Demographics} & \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF } \\
+%  \hline
+%  \multirow{2}{*}{Neuropsychiatric} & \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF } \\ 
+%  \hline
+%  \multirow{ 2}{*}{Cognitive Performance}&   \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
+%  \hline
+%  Quality of Life &\multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }L \\
+%  \hline
+%  Engagement External World &\multirow{2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF } \\
+%  \hline
+%  Diet& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
+%  \hline
+%  Physical Exercise& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
+%  \hline
+%  Cardiovascular& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
+%  \hline
+%  TraumaticBrainInjury & \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\ 
+%  \hline
+%  Social Engagement& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
+%  \hline
+%   Anthropometric& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
+%  \hline
+%  Diagnoses& \multirow{ 2}{*}{AF,AF,AF,AF,AF,AF,AF,AF,AF,AF }  \\
+%  \hline
+% \label{tab:pvfeatures} 
+% \caption{PV features}
+% \end{tabular}
+
+\subsection{Automated Feature Selection}
+The goal of a feature selection algorithm is to find an optimal set of features according to an evaluation metric. Depending on the evaluation metric, we can distinguish between two methodologies of automated feature selection, namely filter and embedded, both can be used to remove the non-essential features for the task of predicting new values of the target feature.
+
+The obvious question we must consider is How much data is enough to consistently predict the target? The answer is not straightforward and depends on a number of factors, for example, the type of model (linear or non-linear), the accuracy we want to achieve, the quality of the data (signal-to-noise ratio), the number of inputs and so on. Arguably, the required size of the training data is an ill-posed question, however, data scientists have instead proposed heuristics to address this problem. One such heuristic is the \emph{one in ten} rule which states that the amount of data needed is 10 times the number of parameters in the model \cite{harrell2001reg}. For example, according to the \emph{one in ten} rule of thumb, in a sample of 1,000 subjects whom 140 develop MCI, 14 parameters (or $10\%$ of the minority class) should be used to reliably fit the total dataset. Thus, for our dataset, the \emph{one in ten} would suggest selecting 14 from the initial 92 self-assessed features shown in Table \ref{tab:pvall}. 
+
+The \emph{one in ten} rule effectively transforms the problem of deciding the size of the training set by that of knowing the number of parameters in the model. In the case of linear models this is a trivial task since the number of parameters is equal to the number of inputs. 
+Nevertheless, the \emph{one in ten} should be seen as a reasonable guess on the number of features and never as prerequisite.
+
+As important or more as deciding about the number of features to be included in the model is to be able to asses the relative importance of the features. In order to study which are the most important features for prediction accuracy we need to discuss first the required methodology to estimate the usefulness of the features. Filter methods (linear) and embedded methods (non-linear) are introduced next.
+
+%However, by including all the input features in the model we may be introducing multicollineariy (correlations between input variables). 
 %which is a problem because independent variables should be independent.
-Feature selection by regularization or other means that discards irrelevant or redundant features is a necessary step with clear benefits including: multicollinearity, reduction in complexity and increase in interpretability, reduction of overfitting and improved processing time.
+%Feature selection by regularization or other means that discards irrelevant or redundant features is a necessary step with clear benefits including: multicollinearity, reduction in complexity and increase in interpretability, reduction of overfitting and improved processing time.
+
+%Wrapper methods estimate the usefulness of each feature before to include it in the classifier, only those features that are identified as useful are included all the rest are removed.  
+% wrapper 
+\subsubsection{Filter method: SelectKBest}
+Filter methods pick up the intrinsic properties of the features estimated via an univariate correlation matrix. In essence, a filter method is a linear approach to finding variables that contain most information about the target variable by means of statistical tests (e.g. chi-squared test, Fisher's exact test) or related quantities such as the correlation coefficient.
+
+% to determine, for example, the variables with variance above a certain threshold.
+The algorithm \emph{SelectKBest} \cite{scikit-learn} uses a score function in order to remove all but the highest scoring features. \emph{SelectKBest} can take as score function the Fisher's test, the $\tilde{\chi}^2$ and the mutual information. For example, SelectKBest with $\tilde{\chi}^2$ as the score function selects the $k$ most important input features $X$ to predict the target feature $y$. A small value of $\tilde{\chi}^2$ statistic for every par $x,y$ will mean the feature $x$ is independent of $y$. A large value will mean $x$ is non-randomly related to $y$, and so likely to provide important information. Only $k$ features will be retained.
+
+\subsubsection{Embedded method: Random Forests}
+
+Random forests are one the most popular machine learning algorithms with a particularly good performance in small and medium size datasets, and most importantly for this study, Random Forest is the algorithm of choice for automated feature selection \cite{breiman2001random}. 
+%Among the advantages of random forest compared to other machine learning techniques are good predictive performance, low overfitting and easy interpretability. 
+
+A random forest consists of a large number of decision trees (tree-like model of decisions), where each tree is trained on \emph{bagged data} (sampling with replacement) using random selection of features \cite{trevor2009elements}. Thus, a random forest is in essence a meta estimator that fits a number of decision tree classifiers. How ensemble methods work may be understood by using the analogy of asking to a thousand people (experts) and then aggregating their answers. Likely, the aggregated response is better than the individual expert’s responses. By the same token, the aggregation of many inaccurate predictors will give better answers than the individual predictions. Or going from analogy to allegory: \emph{Don’t look at the tree... but to the forest!.}
+
+Decision trees are nonparametric models\footnote{The term nonparametric model is a misnomer, it does not mean that the model does not have parameters, but that the number of parameters is not known in training time.}, that is to say, the model will have as many parameters as it needs to fit the data. It follows that if left unconstrained, the tree will fit the data very closely, and most likely overfitting. Decision trees are unstable in the sense that small changes in the input produce may produce very different decision trees.
+Random forests effectively address the overfitting and the stability problems existing in decision trees.
+
+Random Forest do not suffer from the limitations of the Filter methods. Filter methods use correlation to assess the relevance of features, but they may fail to find the best subset of features when features do not behave linearly (e.g. non-normality, multicollinearity, heterocedasticity \cite{ratkowsky1990handbook}). Thus, Random forests solve the real problem of feature selection because it tells us which are the most important features to optimize the prediction. Filter methods, on the other hand, do not solve any optimization problem they rather tell us which features are most linearly correlated with the target feature. 
+
+The important features will appear in the nodes close to the root of the tree and the unimportant ones will tend to be close to the leaves of the tree or not at all. Therefore, random forests allow us to get an estimate of the importance of any feature by calculating how deep in the tree the feature appears across all the trees. 
+Feature importance is calculated as the decrease in node impurity weighted by the probability of reaching that node. Formally, the importance of feature $X_m$ for predicting target $Y$ is evaluated by adding up the weight impurity decreases,$\delta_i(s_t,t)$, for all nodes where $X_m$ is used, averaged over all trees $N_T$ in the forest.
+The importance for each feature on a decision tree is then calculated as:
+\begin{equation}
+Imp(X_m) = \frac{1}{N_T} \sum_{T} \sum_{t \in T:v(s_{t})=X_{m}} p(t) \delta_i(s_t,t)
+\label{eq:gini}
+\end{equation}
+and where $p(t)= N_t/N$ or the the proportion of samples reaching node $t$ and $v(s_t)$ is the variable used in split $s_t$. In words, the formula tells that every time a split of a node is made on variable the  impurity criterion for the two descendant nodes is less than the parent node. 
+%When using the Gini index as impurity function, this measure is known as the Gini importance or Mean Decrease Gini. 
+
+%Adding up the gini decreases for each individual variable over all trees in the forest gives a fast variable importance that is often very consistent with the permutation importance measure.
+%The node probability can be calculated by the number of samples that reach the node, divided by the total number of samples. The higher the value the more important the feature.For each decision tree, Scikit-learn calculates a nodes importance using Gini Importance, assuming only two child nodes (binary tree):
 
 
-\subsubsection{Random Forests}
-We focus next on Random Forest to solve the feature selection problem. 
-A random forest is a meta estimator that fits a number of decision tree classifiers.   
-Random forests effectively address the overfitting and the stability problems existing in decision trees. Decision trees are nonparametric models (the number of parameters is not known in training time) that is to say, the model will have as many parameters as it needs to fit the data. It follows that if left unconstrained, the tree will fit the data very closely, and most likely overfitting. Decision trees are unstable in the sense that small changes in the input produce may produce very different decision trees.
+%feature_importance_
 
-Random Forest do not suffer from the limitations of the Filter methods. Filter methods use correlation to assess the relevance of features but they may fail to find the best subset of features when features do not behave linearly (e.g. non-normality, multicollinearity, heterocedasticity \cite{ratkowsky1990handbook}). 
-%Wrapper methods, contrary to filter methods, measure the usefulness of a subset of features by actually training a model on it. On the other hand, wrapper methods compared to filter methods are computationally very expensive. Wrapper methods, are similar to 
-Embedded methods optimize the classifier performance, and most importantly the evaluation metric is built in the model during the learning process.
-
-%A random forest is a meta estimator that fits a number of decision tree classifiers on various sub-samples of the dataset and uses averaging to improve the predictive accuracy and control over-fitting. The sub-sample size is always the same as the original input sample size but the samples are drawn with replacement if bootstrap=True (default).
-Here we provide a working definition of random forest, a more ind detail description is given in Supplementary Materials. In essence, a random forest consists of a large number of decision trees(tree-like model of decisions), where each tree is trained on \emph{bagged data} (sampling with replacement) using random selection of features \cite{trevor2009elements}. 
-
-How ensemble methods work may be understood by using the analogy of asking to a thousand people (experts) and then aggregating their answers. Likely, the aggregated response is better than the individual expert’s responses. By the same token, the aggregation of many inaccurate predictors will give better answers than the individual predictions. Or going from analogy to allegory: \emph{Don’t look at the tree... but to the forest!. }
-
-Random forests are one the most popular machine learning algorithms with a particularly good performance in small and medium size datasets, and most importantly for this study, Random Forest is the algorithm of choice for automated feature selection. 
-Among the advantages of random forest compared to other machine learning techniques are good predictive performance, low overfitting and easy interpretability. 
-
-%YS Table
-%YS Dec Tree vs ttest 
 
 \section{Results}
 \label{se:res}
 
-Figure \ref{fig:chi2} shows the results with the $\tilde{\chi}^2$ as the score function to compute the $\tilde{\chi}^2$ statistic between each input feature and the target feature. A large value will mean the input feature is non-randomly related to the target feature, and so likely to provide important information. 
-From the initial 92 features only 14 features are retained (one in ten rule). The 14 most important features for conversion to MCI are shown in Figure \ref{fig:chi2}. The Pearson's between features is also shown (only when $>0.1$). The most highly correlated feature to conversion to MCI is use of IT ($r<-0.1$). 
+Figure \ref{fig:rf14} shows the results of the study of feature importance with the filter method \emph{SelectKBest} \cite{scikit-learn}. The score function used, $\tilde{\chi}^2$, gives the $\tilde{\chi}^2$ statistic between each input feature and the target feature. A large value will mean the input feature is non-randomly related to the target feature, and so likely to provide important information.
 
-The most important features according to the \emph{SelectKBest} algorithm are in this order: subjective cognitive decline, APOE\footnote{APOE is not a self-assessed feature but we think including it provides valuable information and allows to have an idea about the importance of lifestyle and self-assessed variables compared to genetic variables}, number of residents at home, age, use of IT, diet high in sweets, memory complaints for daily life tasks, body mass index, fast food fats, sweets, memory complaints to remembering object names, thyroid related problems, relationship with friends, schooling years, number of sons and daughters and smoking habits (present and past).  
+From the initial 92 features only 14 features are retained (\emph{one in ten} rule). The 14 most important features for conversion to MCI using \emph{SelectKBest} are shown in Figure \ref{fig:rf14}. The Pearson's between features is also shown (only when $>0.1$). The most highly correlated feature to conversion to MCI is use of information technologies ($r<-0.1$). 
+
+The most important features according to the \emph{SelectKBest} algorithm are in this order: subjective cognitive decline, APOE\footnote{APOE is not a self-assessed feature but it provides valuable information and allows us to have an idea about the importance of lifestyle and self-assessed variables compared to genetic variables}, number of residents at home, age, use of IT, diet high in sweets, memory complaints for daily life tasks, body mass index, fast food fats, sweets, memory complaints to remembering object names, thyroid related problems, relationship with friends, schooling years, number of sons and daughters and smoking habits (present and past).  
 
 \begin{figure}[!htb]
         \centering
         \includegraphics[keepaspectratio, width=\linewidth]{figures/edadyrandom/HeatmapTopF_chi2}
         \caption{Evaluation of the importance of features for conversion to MCI classification using SelectKBest. The 14 features most informative for MCI conversion are displayed in order of importance (first subjective cognitive decline, last smoking) in both axis. Conversion to MCI is displayed in the last row. The Pearson's correlation among all pair of features including the output target (conversion to MCI) are shown when $r>0.1$ } 
-        \label{fig:chi2}
+        \label{fig:rf14}
 \end{figure}
 
 %\textbf{Embedded method:Random forest}
@@ -246,9 +447,25 @@ The most important features according to the \emph{SelectKBest} algorithm are in
 %Random forests does not overfit. You can run as many trees as you want https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#remarks
 %https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 
-Figure \ref{fig:RF_selectorgini} shows the 14 most informative features using Random forests. The importance of a feature is computed as the (normalized) total reduction of the Gini importance brought by that feature \cite{breiman2017classification}. The most important feature is again the subjective cognitive decline, followed by schooling years, working years, hours of night sleep, the self perceived economic status, number of sons and daughters, hours of diurnal sleep, relationship with friends, number of people living at home, diet high in sweets, age, diet rich in legumes and APOE.
-There is a visible overlap in the important features using random forest and the linear SelectKBest method. The most interesting difference worth discussing is that APOE in random forest drops in importance. In random forest sleeping patters also appear as among important features which were not captured in the linear method. 
+Figure \ref{fig:RF_selectorgini} shows the 14 most informative features using Random forests. The importance of a feature is computed as the (normalized) total reduction of the Gini importance (the mean decrease impurity \ref{eq:gini}) brought by that feature \cite{breiman2017classification}. The higher the importance 
+the more useful the feature, that is the, the better splits the data in the tree. 
+
+% %%%%
+% Googling feature importances says it is the mean decrease impurity. But I'm still confused whether this is the same as mean decrease Gini impurity. If so, how it is calculated for trees and random forests? Beside the math I want to really understand what does it mean.
+% The short answer would be: feature importances gives you an insight of which features have been more critical to correctly split the data at a given node. In other words, a higher score would mean more useful feature, which better splits the data. If a feature has a very low score you could potentially remove it. However, large amount of features (proportional to the number of trees) would be desirable since this would allow to grow very different trees (uncorrelated) that will yield more generalized classifier/regressor
+
+% feature importances function will tell you how much each feature is contributing towards prediction (Information gain)
+
+% Random forest classify the independent variables or features based on Gini, Information Gain, Chi-square or entropy. Those features will get high score which contribute maximum to the information gain.
+% %%%
+
+
+
+The most important feature is subjective cognitive decline, followed by schooling years, working years, hours of night sleep, the self perceived economic status, number of sons and daughters, hours of diurnal sleep, relationship with friends, number of people living at home, diet high in sweets, age, diet rich in legumes and APOE.
+There is a visible overlap in the important features using random forest and the linear \emph{SelectKBest} method. The most interesting difference worth discussing is that APOE in random forest drops in importance. In random forest sleeping patters also appear as among important features which were not captured in the linear method. 
 Interestingly, the subjective cognitive decline is not only the most important feature (highest Gini score in the y-axis) it is also the feature with the shortest inter-tree variability (the random forest implementation shown contains 100,000 trees). The inter-tree variability is represented in the figure with black thin bars. 
+
+Social isolation and loneliness is believed to be a risk factor in AD \cite{holmen1992loneliness}, \cite{fratiglioni2000influence}, \cite{shankar2013social}, \cite{holwerda2014feelings}, \cite{evans2018social}. A 2007 longitudinal study with up to 4 years of in-home follow up, reported a positive association between loneliness and an increased risk of late-life dementia \cite{wilson2007loneliness}. Poor sleep is linked to AD, in particular, the sleep–wake cycle has an effect on levels of amyloid-beta in the brain \cite{ju2014sleep}.
 
 \begin{figure}[!htb]
         \centering
@@ -257,53 +474,56 @@ Interestingly, the subjective cognitive decline is not only the most important f
         \label{fig:RF_selectorgini}
 \end{figure}
 
+\subsubsection{}
+Recall captures opportunity cost, that is, the cost to pay for having a false negative (missing treatment) admittedly there is no treatment for MCI. Recall is important when the number of opportunities (positive cases which tend to be the minority class) is small, for example, if there are 10 positive cases with a 20 recall you will have only 2.
+Thus, precision will be more important than recall when the cost of acting is high, but the cost of not acting is low.  Since the cost of passing up a sick patient is high, precision is less important than recall. If you want to hire and there are many candidates you want precision, because there are many opportunities, buying candidates are low cost.
+
+Flu shot (Recall) vs Satellite launching (Precision).
+
+Recall is more important when the opportunity cost of passing up a positive case is high. For example, flu  shot: give the flu shot to someone does not need it and it will cost you only few dollars, but do not give it to someone who needs it and may die. Because of this, health care plans offer flu shot to everyone, disregarding precision entirely.
+
+Precision is more important in the satellite launching case. Let us say we say is a bad weather day and should not launch the satellite (false negative), no big deal we can launch it any other day. But if we predict good conditions and instead is bad up there (false positive), the satellite will get destroyed. In this case, precision is better than recall.
+
+%PREcision is to PREgnancy tests as reCALL is to CALL center.
+%https://medium.com/datadriveninvestor/accuracy-trap-pay-attention-to-recall-precision-f-score-auc-d02f28d3299c
+Another way of seeing is what can you tolerate. Can you tolerate saying a healthy person that is sick (false positive) or you rather prefer to miss a sick person and tell him is healthy (false negative). False negative are worse because without treatment may die, while in the false positive people will get worried unnecessarily, that is all. False negative are not tolerable in predicting curable diseases.
+Recall tells us the prediction accuracy among only actual positives.It means how correct our prediction is among ill people. That is why we have to minimize false negatives which means we are trying to maximize recall.
+When “false positives” can not be tolerated, precision should be favoured (spam).
+
+F score is an harmonic mean between P and R. F score is an alternative. 
+ROC is just connecting the dots of FPR and TPR for different threshold values. The ROC tells us how good is the model separating the two classes and also tells us about choosing the threshold.
+%AUC = 0,5 means that your model seperates two possible outcomes randomly. AUC can be 1.0 maximum which means perfect seperation.
+TPR = Recall
+FPR = FP/(TN + FP)
+
+If TP =0 then both precision and recall are 0, because P = TP/(TP+FP) and R=TP/(TP+FN)
+
 \section{Discussion}
 \label{se:dis}
-There is no an iron law of progression from normal to MCI to dementia, some people with MCI might never get worse, and a few would even get eventually  better \cite{avila2017subjective}.
-%Here we address this feature selection problem is addressed here using machine learning techniques. 
-The identification of the most important features in the dataset is a powerful interpretation tool. Furthermore, feature selection helps reducing the complexity of the statistical model or machine learning model.
-The widespread use of smartphones and other smart devices able to collect lifestyle's information is expected to foster a more participatory and personalized treatment of chronic diseases. Self-reported data are called to play a key role in the promotion of healthier choices, promoting patients empowerment. 
-Self-reported data are variables that can be reported by the subject herself e.g. age, income level, education, sleep, diet, physical exercise etc. 
 
-A biomarker is a measurable indicator of some biological state. This same idea can be carefully extended to identify lifestyle factors that influence the deterioration of cognitive performance and ultimately the development of AD \cite{ellis2010addressing}. It is however crucial to understand which and how many features\footnote{Here the terms feature and variable are used indistinctly. The former is the usual denomination in  machine learning and the last in statistics.} are relevant for the problem at hand, which in our case is prediction of MCI. A model with too many parameters may not generalize well from our training data to unseen data, this is called overfitting. By the same token a model that is too simple with regards to the data it is trying to modelis said to underfit.
+There is not an iron law of progression from normal to MCI to dementia, some people with MCI might never get worse, and a few would even get eventually better \cite{avila2017subjective}. The identification of the most important features in the dataset is a powerful interpretation tool with obvious benefits in prevention and diagnostics. 
 
-Non linear models do not need to deal with the multicollinearity since they do not rely upon the assumption that the input variables are independent as is the case in linear models( e.g. logistic regression). However, feature selection needs to be performed even more so. There is a risk of overfitting in non-linear models e.g. artificial neural networks with a large number of parameters \cite{goodfellow2016deep}. The one in ten rule can be relaxed and used as a lower bound to the amount of training data needed. Thus, using the same example, at least 14 parameters can be reliably fitted to the total dataset using a non linear model.
-
-The set of ranked variables obtained via Random Forest -an ensemble learning method for classification- defines the \emph{The Vallecas Index}. 
-
-Random forests are one of the most used machine learning techniques, among the reasons of its popularity are accuracy, robustness and most importantly for this study, random forest have built-in feature selection capabilities. 
-
-
-The incidence of Alzheimer’s disease grows exponentially with age. 
-The unfulfilled promise of disease-modifying therapies for Alzheimer disease suffers from the lack of a theory of aging able to explain the dynamic progression of both normal and pathological aging \cite{cerella1985information}, \cite{mangel2001complex}, \cite{sleimen2014aging}, \cite{cohen2016complex}.
-%jeremy english https://www.quantamagazine.org/first-support-for-a-physics-theory-of-life-20170726/
-While a theory of biological aging, able to explain the very complex intricacies and variability of aging may seem today quixotic if not far fetched or impossible, the ever increasing availability of Big Data coupled with data analytics is challenging research practices. The epistemological implications of the data-drive approach of machine learning are at this point still unclear, however, what is incontestable is that research in problems lacking a clear theoretical framework such as chronic diseases, will make a more intensive (never less) use of data and predictive analytics.
-
-Building prediction machines for conversion to MCI using self-informed features, i.e. variables that can be reported by the subject herself represents a step forward towards a new medicine that aspires to be closer to the three P's: personalized, preventive and precise. 
-
-
+In this work we have selected the subset of most important self assessed features for MCI conversion. This set of ranked variables defines \emph{The Vallecas Index}. 
 \emph{The Vallecas Index} identifies the set of the most important features for conversion to MCI using \emph{The Vallecas Project} Dataset. 
+
 The rationale and motivation behind \emph{The Vallecas Index} is twofold. First, to reduce the complexity of the problem at hand in order to gain in interpretability. The \emph{Vallecas Project} dataset has thousands of variables and having irrelevant features can decrease the accuracy of the model. Furthermore, it is not enough having a model that provides accurate predictions, being able to interpret the predictions made is essential, in particular in a clinical domain.
 % especially linear algorithms like linear and logistic regression. 
 Second, by detecting life style and other self assessed features related to MCI conversion, it is possible to provide recommendations and to suggest healthy-aging effective choices.
 
-The application of automated feature selection algorithm in Random Forest to \emph{The Vallecas Project} dataset of self-assessed variables shows that the subjective cognitive decline together with the professional and educational level, loneliness and social life, sleep pattern and diet are the most important features for conversion to MCI in healthy elderly subjects.
+%It is however crucial to understand which and how many features are relevant for the problem at hand, which in our case is prediction of MCI. A model with too many parameters may not generalize well from our training data to unseen data, this is called overfitting. By the same token, a model that is too simple with regards to the data it is trying to model is said to underfit \cite{goodfellow2016deep}.
 
-Subjective cognitive decline REFS MA-MA %\ref{}{}. 
-Social isolation and loneliness is believed to be a risk factor in AD \cite{holmen1992loneliness}, \cite{fratiglioni2000influence}, \cite{shankar2013social}, \cite{holwerda2014feelings}, \cite{evans2018social}. A 2007 longitudinal study with up to 4 years of in-home follow up, reported a positive association between loneliness and an increased risk of late-life dementia \cite{wilson2007loneliness}. Poor sleep is linked to AD, in particular, the sleep–wake cycle has an effect on levels of amyloid-beta in the brain \cite{ju2014sleep}.
+\emph{The Vallecas Index} was obtained via Random Forest -an ensemble learning method for classification. Random forests are one of the most used machine learning techniques, among the reasons of its popularity are accuracy, robustness and most importantly for this study, random forest have built-in feature selection capabilities. 
+%Non linear models (e.e. Random forests) do not need to deal with the problem of multicollinearity (independent variables in a regression model are correlated) since they do not rely upon the assumption that the input variables are independent as is the case in linear models (e.g. logistic regression). However, feature selection needs to be performed even more so. 
 
+A biomarker is a measurable indicator of some biological state. This same idea can be carefully extended to identify lifestyle factors that influence the deterioration of cognitive performance and ultimately the development of AD \cite{ellis2010addressing}. The widespread use of smartphones and other smart devices able to collect lifestyle's information is expected to foster a more participatory and personalized treatment of chronic diseases. Self-reported data are called to play a key role in the promotion of healthier choices, promoting patients empowerment. 
 
-DISTIMGUISH BETWEEN RISK AND SHANNON INFORMATION, WE DO THE LAST
+The application of automated feature selection algorithm with Random Forest to self-assessed variables of \emph{The Vallecas Project} dataset shows that the subjective cognitive decline together with the professional and educational level, loneliness and social life, sleep pattern and diet are the most important features for conversion to MCI in healthy elderly subjects.
 
-%% References
-%%
-%% Following citation commands can be used in the body text:
-%% Usage of \cite is as follows:
-%%   \cite{key}          ==>>  [#]
-%%   \cite[chap. 2]{key} ==>>  [#, chap. 2]
-%%   \citet{key}         ==>>  Author [#]
+The unfulfilled promise of disease-modifying therapies for Alzheimer disease suffers from the lack of a theory of aging able to explain the dynamic progression of both normal and pathological aging \cite{cerella1985information}, \cite{mangel2001complex}, \cite{sleimen2014aging}, \cite{cohen2016complex}.
+%jeremy english https://www.quantamagazine.org/first-support-for-a-physics-theory-of-life-20170726/
+While a theory of biological aging, able to explain the very complex intricacies and variability of aging may seem today quixotic if not far-fetched or impossible, the ever-increasing availability of Big Data coupled with data analytics is challenging research practices. 
 
-%% References with bibTeX database:
+The epistemological implications of the data-drive approach of machine learning are at this point still unclear, however, what is incontestable is that research in problems lacking a clear theoretical framework such as chronic diseases, will bring a more intensive (never less) use of data and predictive analytics. Building prediction machines for conversion to MCI using self-informed features, i.e. variables that can be reported by the subject herself, represents a step forward towards a new medicine that aspires to be closer to the 3 Ps: \emph{personalized, preventive} and \emph{precise}. 
 
 \bibliographystyle{model1-num-names}
 \bibliography{../bibliography-jgr/bibliojgr.bib}
@@ -324,21 +544,150 @@ DISTIMGUISH BETWEEN RISK AND SHANNON INFORMATION, WE DO THE LAST
 
 % \end{thebibliography}
 
+\newpage
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+\appendix
+\section{Supplementary materials}
+
+The advantage of Random Forests is that they provide out of bag OOB samples by construction, so the user does not need to separate training and validation sets form the dataset. 
+
+%users don't have to extract their own validation set and pass it to the feature importance function. 
+%
+%If we ignore the computation cost of retraining the model, we can get the most accurate feature importance using a brute force drop-column importance mechanism. The idea is to get a baseline performance score as with permutation importance but then drop a column entirely, retrain the model, and recompute the performance score. If we had infinite computing power, the drop-column mechanism would be the default for all RF implementations because it gives us a “ground truth” for feature importance. The importance values could be different between the two strategies, but the order of feature importances should be roughly the same. 
+%The importance of a feature is the difference between the baseline and the drop in overall accuracy or $R^2$ caused by permuting the feature. The permutation mechanism is much more computationally expensive than the mean decrease in impurity mechanism, but the results are more reliable.
+
+%Any machine learning model can use the strategy of permuting columns to compute feature importances. 
+%This fact is under-appreciated in academia and industry. 
+
+ %The problem is that this mechanism, while fast, does not always give an accurate picture of importance. Furthermore, this common mechanism for computing feature importance is biased; i.e. it tends to inflate the importance of continuous or high-cardinality categorical variables. “the variable importance measures of Breiman's original Random Forest method ... are not reliable in situations where potential predictor variables vary in their scale of measurement or their number of categories.” \cite{strobl2007bias}. Strobl et al show that “permutation importance over-estimates the importance of correlated predictor variables.”
+%The importance value of a feature is the difference between the baseline and the score from the model missing that feature. 
+The mean decrease in impurity importance of a feature is computed by measuring how effective the feature is at reducing uncertainty (classifiers) or variance (regressors) when creating decision trees within Random Forest. As a classifier, random forest performs an implicit feature selection, using a small subset of strong variables for the classification only, leading to its superior performance on high dimensional data. 
+%
+%The risk of this procedure is a potential bias towards correlated predictive variables. 
+
+The "Gini importance" -a computationally efficient approximation to the entropy- is a score that provides a relative ranking of the spectral features and is a by-product in the training of the random forest classifier, that is to say, the feature selection mechanism is embedded in the training algorithm of the classifier.
+
+This is roughly how it works. At each node $\tau$ within the binary trees T of the random forest, the optimal split is computed using the Gini impurity $i(\tau)$, measuring how well a potential split is separating the samples of the two classes in this particular node.
+
+Formally, the decrease in the importance $\delta(i)$ from splitting and sending the sample to two sibling nodes of $\tau$, $\tau_a$ and $\tau_b$, with respective sample fractions $p_a=n_a/n$ and $p_a=n_b/n$ by a threshold $t_\theta$ on variable $\theta$ is defined as:
+\begin{equation}
+\delta(i)(\tau) = i(\tau) - p_{a}i(\tau_{a})- p_{b}i(\tau_{b})
+\label{eq:delatiatu}
+\end{equation}
+where the the Gini impurity $i(\tau)$ is calculated as: 
+\begin{equation}
+i(\tau) = 1 -p_{1}^2 - p_{0}^2
+\label{eq:iatu}
+\end{equation}
+where $p_k = \frac{n_k}{n}$ and $n_k$ is the number of samples from the class $k =\{0,1\}$, out of the total n samples.
+
+Performing an exhaustive tree search over all variables $\theta$ available at the node, and over all possible thresholds $t_\theta$, the pair $\theta, t_{\theta}$ leading to a maximal decrease impurity $\delta(i)$ is determined. The decrease in Gini impurity resulting from this optimal split $\delta(i)_{\theta}(\tau, T)$ is recorded and accumulated for all nodes $\tau$ in all trees T in the forest. 
+
+The Gini importance $I_G$ tells us how often any given feature $\theta$ was selected for a split, and how large its overall discriminative value was for the classification problem.
+
+\begin{equation}
+I_{G}(\theta) = \sum_T \sum_{\tau} \delta(i)_{\theta}(\tau,T)
+\end{equation}
+
+Based on the previous discussion, we can elaborate on the results shown in Figure \ref{fig:rf14}. First we visualize the internal "mechanics" of one decision tree in the random forest, we plot one of the 10,000 decision trees built (Figure \ref{fig:RF_selectorgini})
+
+\begin{figure}[!htb]
+        \centering
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/tree}
+        \caption{Visualization of one of the 10,000 decision trees, the higher the node the moist important. The hyperparameter "maximum depth" has been set to 3 for clarity. If this parameter is not set, the tree will likely overfit the data.} 
+        \label{fig:RF_selectorgini}
+\end{figure}
+
+We still can group the important features into three groups by importance. A first group with the first 3 most important features, a second group with the next 3 most important features and a last group with the rest (8) features, from the initial 14 features. Table \ref{fig:treeg} shows the accuracy and recall with using this division of groups. 
+The group with the three most important features has better accuracy than the other two groups. However, this does not mean that we just need these three features, if we maximize by metrics different from accuracy, for example, recall, the second group obtains better results.
+
+
+\begin{table}
+\caption{Accuracy by training the random forest with three different subsets of the 14 most important features. Group 1 3 best features, Group 2 , next 3 best features and Group 3 remaining 8 features. The forest has a maximum depth equals to 8.}
+\label{fig:treeg}
+\begin{center}
+\begin{tabular}{ |p{4cm}|p{4cm}|p{4cm}|  }
+
+ \hline
+ \multicolumn{3}{|c|}{Accuracy using feature groups} \\
+ \hline
+ Features 1,2,3    & Features 4,5,6 & Features 7,8,9,10,11,12,13,14\\
+ \hline
+ 0.728   & 0.53    &0.683\\
+ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+If we want to take into account the variability in the importance of the features across all the trees in the forest we can weight the Gini importance with the variance: 
+\begin{equation}
+I(\tau) = G(\tau) * \sigma(\tau)
+\end{equation}
+In doing so and not surprisingly the group with the largest number of features is the one with best accuracy (Table \ref{fig:rfvar}). Note the accuracy of the first group with $I*(\tau)$ is worse than with Gini.
+
+\begin{table}
+\caption{Accuracy with Gini weighted by the variance.}
+\label{fig:rfvar}
+\begin{center}
+\begin{tabular}{ |p{4cm}|p{4cm}|p{4cm}|  }
+ \hline
+ \multicolumn{3}{|c|}{Accuracy using feature groups} \\
+ \hline
+ Features 1,2,3    & Features 4,5,6 & Features 7,8,9,10,11,12,13,14\\
+ \hline
+0.694   & 0.641    &0.72\\
+ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
+
+
+%0-3  0.728 and 0.302
+%4-7 0.53 and 0.5581
+%0.683 and 0.2558
+
 \end{document}
 
 
+%There is a risk of overfitting in non-linear models e.g. artificial neural networks with a large number of parameters . The one in ten rule can be relaxed and used as a lower bound to the amount of training data needed. Thus, using the same example, at least 14 parameters can be reliably fitted to the total dataset using a non linear model.
 
 
 
 
+%Here we address this feature selection problem is addressed here using machine learning techniques. 
+% Furthermore, feature selection helps reducing the complexity of the statistical model or machine learning model.
+% The incidence of Alzheimer’s disease grows exponentially with age. 
+% Subjective cognitive decline REFS MA-MA %\ref{}{}. 
 
+%Embedded methods use a learning algorithm to select the optimum set of features. Random forest is the most commonly used embedded method for feature selection  . 
+%Embedded methods optimize the classifier performance, and most importantly the evaluation metric is built in the model during the learning process. 
+%A random forest is a meta estimator that fits a number of decision tree classifiers on various sub-samples of the dataset and uses averaging to improve the predictive accuracy and control over-fitting. The sub-sample size is always the same as the original input sample size but the samples are drawn with replacement if bootstrap=True (default).
+%Wrapper methods, contrary to filter methods, measure the usefulness of a subset of features by actually training a model on it. On the other hand, wrapper methods compared to filter methods are computationally very expensive. Wrapper methods, are similar to 
+%Embedded methods optimize the classifier performance, and most importantly the evaluation metric is built in the model during the learning process.
+%A random forest is a meta estimator that fits a number of decision tree classifiers on various sub-samples of the dataset and uses averaging to improve the predictive accuracy and control over-fitting. The sub-sample size is always the same as the original input sample size but the samples are drawn with replacement if bootstrap=True (default).
+%We perform automated feature selection using filter and embedded method (Random Forest). Additionally, results obtained with wrapper methods are shown in the Supplementary Materials \ref{}. 
+%Here we provide a working definition of random forest, a more ind detail description is given in Supplementary Materials. 
+%YS Table
+%YS Dec Tree vs ttest 
 
+%which is defined as the most important self-assessed features  for subjects that have at least 2 visits (920 subjects). 
 
+% The number of subjects that converted to MCI is 156 subjects. 
+% The dataset of the \emph{Vallecas Project} used here is of the order of 1,000 samples and can arguably be considered to fall within the small-medium class category. 
+% DISTIMGUISH BETWEEN RISK AND SHANNON INFORMATION, WE DO THE LAST
 
+%% References
+%%
+%% Following citation commands can be used in the body text:
+%% Usage of \cite is as follows:
+%%   \cite{key}          ==>>  [#]
+%%   \cite[chap. 2]{key} ==>>  [#, chap. 2]
+%%   \citet{key}         ==>>  Author [#]
 
-
-
-
+%% References with bibTeX database:
 
 \newpage
 %% The Appendices part is started with the command \appendix;
@@ -499,15 +848,6 @@ One of Breiman's issues involves the accuracy of models. The more accurate our m
 
 %Gini or mean decrease in impurity https://stackoverflow.com/questions/15810339/how-are-feature-importances-in-randomforestclassifier-determined
 
-The mean decrease in impurity importance of a feature is computed by measuring how effective the feature is at reducing uncertainty (classifiers) or variance (regressors) when creating decision trees within RFs. The problem is that this mechanism, while fast, does not always give an accurate picture of importance. Furthermore, this common mechanism for computing feature importance is biased; i.e. it tends to inflate the importance of continuous or high-cardinality categorical variables. “the variable importance measures of Breiman's original Random Forest method ... are not reliable in situations where potential predictor variables vary in their scale of measurement or their number of categories.” \cite{strobl2007bias}. Strobl et al show that “permutation importance over-estimates the importance of correlated predictor variables.”
-
-Breiman and Cutler also described permutation importance. The importance of a feature is the difference between the baseline and the drop in overall accuracy or R2 caused by permuting the column. The permutation mechanism is much more computationally expensive than the mean decrease in impurity mechanism, but the results are more reliable.
-Any machine learning model can use the strategy of permuting columns to compute feature importances. 
-This fact is under-appreciated in academia and industry. 
-The advantage of Random Forests, of course, is that they provide OOB samples by construction, so users don't have to extract their own validation set and pass it to the feature importance function. 
-The importance value of a feature is the difference between the baseline and the score from the model missing that feature. 
-The risk is a potential bias towards correlated predictive variables. 
-If we ignore the computation cost of retraining the model, we can get the most accurate feature importance using a brute force drop-column importance mechanism. The idea is to get a baseline performance score as with permutation importance but then drop a column entirely, retrain the model, and recompute the performance score. If we had infinite computing power, the drop-column mechanism would be the default for all RF implementations because it gives us a “ground truth” for feature importance. The importance values could be different between the two strategies, but the order of feature importances should be roughly the same. 
 
 
 

@@ -18,7 +18,6 @@
 #######################################################
 # -*- coding: utf-8 -*-
 import os, sys, pdb, operator
-import datetime
 import time
 import numpy as np
 import pandas as pd
@@ -28,6 +27,7 @@ import sys
 import statsmodels.api as sm
 import time
 import importlib
+import random
 #import rfpimp
 from rfpimp import *
 #sys.path.append('/Users/jaime/github/code/tensorflow/production')
@@ -49,6 +49,16 @@ from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, Stratified
 from sklearn.metrics import precision_score, f1_score, accuracy_score, recall_score,\
 confusion_matrix,roc_auc_score, roc_curve, auc, classification_report,precision_recall_curve,\
 make_scorer, average_precision_score
+
+def redirect_to_file(text, file):
+	"""
+	"""
+	original = sys.stdout
+	sys.stdout = open(file, 'a')
+	#print('This is your redirected text:')
+	print(text)
+	sys.stdout = original
+    #print('This string goes to stdout, NOT the file!')
 
 def vallecas_features_dictionary(dataframe):
 	"""vallecas_features_dictionary: builds a dictionary with the feature clusters of PV
@@ -531,7 +541,7 @@ def feature_selection_embedding(X, y, nboffeats):
 def ROC_Curve(rf, auc,X_train,X_test,y_train,y_test):
 	from sklearn.preprocessing import OneHotEncoder
 
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/figurescv5/'
 	one_hot_encoder = OneHotEncoder()
 	rf_fit = rf.fit(X_train, y_train)
 	#fit = one_hot_encoder.fit(rf.apply(X_train))
@@ -808,10 +818,10 @@ def evaluate_model(model, X_test, y_test):
 	print('The RF recalls :', recall)
 	print('The RF f1s :', f1)
 
-def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
+def plot_precision_recall_vs_threshold(precisions, recalls, thresholds, fit_type=None):
 
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
-	figname = 'PR_thr.png'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/figurescv5/'
+	figname = 'PR_thr_' + fit_type+ '.png'
 	plt.figure(figsize=(8, 8))
 	plt.title("Precision and Recall Scores as a function of the decision threshold")
 	plt.plot(thresholds, precisions[:-1], "b--", label="Precision")
@@ -824,7 +834,7 @@ def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
 	plt.pause(3)
 	plt.close()
 
-def plot_roc_curve(y_test,y_scores):
+def plot_roc_curve(y_test,y_scores,fit_type=None):
 	"""
 	"""
 	# method I: plt
@@ -835,8 +845,8 @@ def plot_roc_curve(y_test,y_scores):
 	roc_auc = auc(fpr, tpr)
 	print('roc_auc = %.4f' %(roc_auc)) # AUC of ROC
 	
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
-	figname = 'roc_curve2.png'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/figurescv5/'
+	figname = 'roc_curve_' + fit_type + '.png'
 	plt.figure(figsize=(8,8))
 	plt.title('ROC Curve')
 	plt.plot(fpr, tpr, linewidth=2, label= 'AUC = %0.2f' % roc_auc)
@@ -851,7 +861,7 @@ def plot_roc_curve(y_test,y_scores):
 	plt.pause(3)
 	plt.close()
 	
-def report_evaluation_metrics(clf, X_test, y_test, y_scores):
+def report_evaluation_metrics(clf, X_test, y_test, y_scores,file=None):
 	"""report of results for different optimization metrics 
 	Args:clf, X_test, y_test
 	Output:None
@@ -861,22 +871,35 @@ def report_evaluation_metrics(clf, X_test, y_test, y_scores):
 	#pprint(clf_best)
 	#y_scores2 = clf_best.predict(X_test) 
 	#np.array_equal(y_scores, y_scores2)
-	print(pd.DataFrame(confusion_matrix(y_test, y_scores),columns=['pred_neg', 'pred_pos'], index=['neg', 'pos']))
-	avg_prec = average_precision_score(y_test, y_scores)  
-	print('\t Average precision score is=%.4f' %(avg_prec))
+
+	if file is None:
+		file = '/Users/jaime/github/papers/JADr_vallecasindex/reports/'+ str(random.randint(1,1234567890))+'.txt'
+	redirect_to_file('Best params:: \t', file)
+	text = str(clf.get_params()) + '\n'
+	redirect_to_file(text, file)
+	text = pd.DataFrame(confusion_matrix(y_test, y_scores),columns=['pred_neg', 'pred_pos'], index=['neg', 'pos'])
+	print(text); redirect_to_file(text, file)
+	avg_prec = average_precision_score(y_test, y_scores)
+	text = '\t Average precision score is=%.4f' %(avg_prec)
+	print(text);redirect_to_file(text, file)
 	roc_score = roc_auc_score(y_test, y_scores)
-	print('\t ROC score is=%.4f' %(roc_score)) 
+	text = '\t ROC score is=%.4f' %(roc_score)
+	print(text);redirect_to_file(text, file)
 	prec_sc = precision_score(y_test, y_scores)  
-	print('\t Precision score is=%.4f' %(prec_sc))
+	text = '\t Precision score is=%.4f' %(prec_sc)
+	print(text); redirect_to_file(text, file)
 	f1_sc = f1_score(y_test, y_scores)
-	print('\t f1 score is=%.4f' %(f1_sc))
-	accuracy_sc = accuracy_score(y_test, y_scores)  
-	print('\t Accuracy score is=%.4f' %(accuracy_sc))
+	text = '\t f1 score is=%.4f' %(f1_sc)
+	print(text); redirect_to_file(text, file)
+	accuracy_sc = accuracy_score(y_test, y_scores) 
+	text = '\t Accuracy score is=%.4f' %(accuracy_sc) 
+	print(text); redirect_to_file(text, file)
 	recall_sc = recall_score(y_test, y_scores)
-	print('\t Recall score is=%.4f' %(recall_sc)) 
+	text = '\t Recall score is=%.4f' %(recall_sc)
+	print(text); redirect_to_file(text, file)
 	#precision_score, f1_score, accuracy_score, recall_score,\confusion_matrix,roc_auc_score, roc_curve, auc, classification_report ,precision_recall_curve,\make_scorer, average_precision_score
 
-def plot_precision_recall_curve(y_test, y_scores, clf=None):
+def plot_precision_recall_curve(y_test, y_scores, fit_type=None, clf=None):
 	"""plot_precision_recall_curve : Compute precision-recall pairs for different probability thresholds
 	Output: precision, recall, thresholds
 	Precision values such that element i is the precision of predictions with score >= thresholds[i] and the last element is 1.
@@ -890,7 +913,7 @@ def plot_precision_recall_curve(y_test, y_scores, clf=None):
 		proba = '_proba_'
 	else:
 		proba = '_01_'
-	print('PR curve for probabilitic predictions\n')
+	print('PR curve for probabilistic predictions\n')
 	average_precision = average_precision_score(y_test, y_scores)  
 	precision, recall, _ = precision_recall_curve(y_test, y_scores)
 	# In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
@@ -929,10 +952,10 @@ def plot_precision_recall_curve(y_test, y_scores, clf=None):
 		labels.append('Precision-recall (area = {0:0.2f})'''.format(average_precision))
 		plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
 
-	print('Saving PR curve ')
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
+	print('Saving PR curve %s' %fit_type)
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/figurescv5'
 	if clf is not None:
-		figname = 'PR_curve' + proba + str(clf.get_params()['n_estimators']) +'_' + str(clf.get_params()['max_features']) +'.png'
+		figname = 'PR_curve_' + fit_type + proba + str(clf.get_params()['n_estimators']) +'_' + str(clf.get_params()['max_features']) +'.png'
 	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
 	plt.show(block=False)
 	plt.pause(3)
@@ -949,8 +972,7 @@ def adjusted_classes(y_scores, t):
 
 def grid_search_wrapper(X_train, y_train, X_test, y_test,refit_score, param_grid=None, scorers=None):
     """
-    fits a GridSearchCV classifier using refit_score for optimization
-    prints classifier performance metrics
+    grid_search_wrapper fits a GridSearchCV classifier using refit_score for optimization
     """
 
     skf = StratifiedKFold(n_splits=3)
@@ -959,54 +981,23 @@ def grid_search_wrapper(X_train, y_train, X_test, y_test,refit_score, param_grid
     	param_grid = create_dict_hyperparameters()
     if scorers is None:
     	scorers = create_dict_scorers()	
-    grid_search = GridSearchCV(clf, param_grid, scoring=scorers, refit=refit_score,
-                           cv=skf, return_train_score=True, n_jobs=6)
+    grid_search = GridSearchCV(clf, param_grid, scoring=scorers, refit=refit_score,cv=skf, return_train_score=True, n_jobs=6)
     grid_search.fit(X_train, y_train)
-
     # make the predictions
     y_pred = grid_search.predict(X_test)
-
     print('Best params for {}'.format(refit_score))
     print(grid_search.best_params_)
-
     # confusion matrix on the test data.
     print('\nConfusion matrix of Random Forest optimized for {} on the test data:'.format(refit_score))
     print(pd.DataFrame(confusion_matrix(y_test, y_pred),columns=['pred_neg', 'pred_pos'], index=['neg', 'pos']),'\n')
     
-    #visualize the scores and parameters for each classifier iteration.
+    # scoring metrics for each configuration of hyperparameters
     results = pd.DataFrame(grid_search.cv_results_)
-    results = results.sort_values(by='mean_test_recall_score', ascending=False)
-    results[['mean_test_recall_score', 'mean_test_precision_score', 'mean_test_accuracy_score', 'param_max_depth', 'param_max_features', 'param_min_samples_split', 'param_n_estimators']].round(3).head()
+    sortedby = 'mean_test_'+refit_score
+    results = results.sort_values(by=sortedby, ascending=False)
+    #results[['mean_test_accuracy_score','mean_test_recall_score', 'mean_test_precision_score', 'param_max_depth', 'param_max_features', 'param_min_samples_split', 'param_n_estimators']].round(3).head()
     return grid_search
-	
 
-def create_random_grid():
-	"""
-	"""
-	# Number of trees in random forest
-	n_estimators = [int(x) for x in np.linspace(start = 10, stop = 10000, num = 100)]
-	n_estimators = [10,100,1000,5000,10000,100000]
-	# Number of features to consider at every split
-	max_features = ['auto', 'sqrt']
-	# Maximum number of levels in tree
-	max_depth = [int(x) for x in np.linspace(2, 8, num = 4)]
-	max_depth.append(None)
-	# Minimum number of samples required to split a node
-	min_samples_split = [5, 10]
-	# Minimum number of samples required at each leaf node
-	min_samples_leaf = [2, 4]
-	# Method of selecting samples for training each tree
-	bootstrap = [True, False]
-	class_weight = [None, 'balanced']
-	# Create the random grid
-	random_grid = {'n_estimators': n_estimators,'max_features': max_features,\
-	'max_depth': max_depth,'min_samples_split': min_samples_split,'min_samples_leaf': \
-	min_samples_leaf,'bootstrap': bootstrap, 'class_weight':class_weight}
-
-	pprint(random_grid)
-	# Number of trees in random forest
-	#param_grid = {'bootstrap': [True],'max_depth': [80, 90, 100, 110],'max_features': [2, 3],'min_samples_leaf': [3, 4, 5],'min_samples_split': [8, 10, 12],'n_estimators': [100, 200, 300, 1000]}
-	return random_grid
 
 def print_classsifier_parameters(clf):
 	"""
@@ -1021,7 +1012,8 @@ def create_dict_hyperparameters():
 	"""
 	#param_grid = {'class_weight':[None, 'balanced'], 'min_samples_leaf':[3, 6], 'min_samples_split':[3, 5, 10], 'n_estimators':[100, 1000, 10000],'max_depth': [3, 5, 7], 'max_features': [3, 5, 10, 20]}
 	#param_grid = {'class_weight':[None, 'balanced'], 'min_samples_leaf':[ 12,14,16],'min_samples_split':[6,8,10],'n_estimators':[1000, 10000]}
-	param_grid = {'class_weight':['balanced'], 'min_samples_leaf':[6], 'min_samples_split':[5], 'n_estimators':[1000],'max_depth': [5], 'max_features': [3]}
+	param_grid = {'class_weight':['balanced'], 'criterion':['gini', 'entropy'],'min_samples_leaf':[4,6,8], 'min_samples_split':[4,6,8], 'n_estimators':[1000,10000,100000],'max_depth': [2,3,5,7], 'max_features': [10,20,30,40]}
+	# recommended Breiman m = sqrt(X.shape)
 	pprint(param_grid)
 	return param_grid
 
@@ -1080,6 +1072,38 @@ def translate_PVfeatures(features_spa):
 
 		return features_eng
 
+def fit_Best_RF(X_train, y_train, X_test, y_test):
+	"""
+	"""
+	from datetime import datetime
+
+	# build model and tuning model
+	refit_scores = ['precision_score', 'recall_score', 'f1_score', 'accuracy_score']
+	filereports = []
+	for refit_score in refit_scores:
+		print('Running grid_search_wrapper for refit_score=%s' %refit_score)
+		grid_search_clf = grid_search_wrapper(X_train, y_train, X_test, y_test, refit_score=refit_score)
+		clf_best = grid_search_clf.best_estimator_
+		# report_evaluation_metrics(grid_search_clf, X_test, y_test)
+		# Prediction y_scores [0,1]
+		y_scores = clf_best.predict(X_test)
+		eventid = datetime.now().strftime('%Y%m%d-%H%M%S_')
+		filereport = '/Users/jaime/github/papers/JADr_vallecasindex/reports/reportscv5/'+ eventid + str(refit_score) + '.txt'
+		filereports.append(filereport)
+		report_evaluation_metrics(clf_best, X_test, y_test, y_scores, filereport)
+	
+		print('Probabilistc prediction y_score Real numbers and binarized with threshold \n')	
+		y_scores_proba = clf_best.predict_proba(X_test)[:,1]
+		# Binarize predictions R \to [0,1] with threshold
+		y_pred_adj = adjusted_classes(y_scores, 0.47)
+		#report_evaluation_metrics(clf_best, X_test, y_test, y_pred_adj,filereport)
+		precision, recall, threshold = plot_precision_recall_curve(y_test,y_scores_proba,refit_score,clf_best)
+		plot_precision_recall_vs_threshold(precision, recall, threshold, refit_score)
+		plot_roc_curve(y_test,y_scores_proba,refit_score)
+	print('DONE fit_Best_RF see results in::')
+	pprint(filereports)
+	return
+
 ##################################################################################
 ##################################################################################
 ##################################################################################
@@ -1104,6 +1128,7 @@ def main():
 	target_label = 'conversionmci'
 	X,y = select_PVdictio(dataframe, features_dict,target_label)
 	X = dataset_cleanup(X)
+	# encode Real features ['renta', 'pabd', 'talla', 'imc', 'peso']
 	toq = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal','edad_visita1']
 	X = encode_in_quartiles(X, toq)
 	df_pv = X.copy()
@@ -1123,30 +1148,9 @@ def main():
 		evaluate_model(dummy, X_test, y_test)
 		print('\n')
 
-	# build model and tuning model
-	grid_search_clf = grid_search_wrapper(X_train, y_train, X_test, y_test,refit_score='precision_score')
-	clf_best = grid_search_clf.best_estimator_
-	# report_evaluation_metrics(grid_search_clf, X_test, y_test)
-	# Prediction y_scores [0,1]
-	y_scores = clf_best.predict(X_test) 
-	report_evaluation_metrics(clf_best, X_test, y_test, y_scores)
-	
-	print('Probabilistc prediction y_score Real numbers and binarized with threshold \n')	
-	y_scores = clf_best.predict_proba(X_test)[:,1]
-	# Binarize predictions R \to [0,1] with threshold
-	y_pred_adj = adjusted_classes(y_scores, 0.47)
-	report_evaluation_metrics(clf_best, X_test, y_test, y_pred_adj)
-	precision, recall, threshold = plot_precision_recall_curve(y_test,y_scores,clf_best)
-	
-	#plot_iso_f1_curves(recall, precision, y_test, y_scores)
-
-	plot_precision_recall_vs_threshold(precision, recall, threshold)
-	plot_roc_curve(y_test,y_scores)
-	return
-	
-	
-		
-
+	# build model and tuning model	
+	fit_Best_RF(X_train, y_train, X_test, y_test)
+	pdb.set_trace()
 
 	# train and evaluate base model RF no Hyperparameter tunning
 	rf = train_RF(X_train, y_train, X_test, y_test)

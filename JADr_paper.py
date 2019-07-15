@@ -50,6 +50,8 @@ from sklearn.metrics import precision_score, f1_score, accuracy_score, recall_sc
 confusion_matrix,roc_auc_score, roc_curve, auc, classification_report,precision_recall_curve,\
 make_scorer, average_precision_score
 
+figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
+
 def redirect_to_file(text, file):
 	"""
 	"""
@@ -228,19 +230,30 @@ def remove_features_lowvariance(df):
 	print('REMOVED Features for Low variance: ', removed_features)
 	return removed_features
 
-def remove_features_redundant(df):
+def remove_features_redundant(df, redundant=None):
 	"""remove_features_redundant
 	Output: dataframe
 	"""
-	redundant = ['nivelrenta', 'educrenta']
-	return df.drop(redundant, axis=1)
-
+	if len(redundant) <1:
+		redundant = ['nivelrenta', 'educrenta']
+	if redundant in list(df.columns) is True:
+		# remove list if features
+		return df.drop(redundant, axis=1)
+	else:
+		# remove features that exist
+		for redcol in redundant:
+			if redcol in df.columns:
+				print('Removing feature:%s ' %redcol)
+				df.drop(redcol, axis=1, inplace=True)
+			else:
+				print('The dataframe does not contain to be removed the feature:%s ' %redcol)
+		return df
 
 
 def plot_wrapper_fig(rfecv, figname, estimator_name=None):
 	"""
 	"""
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE'
+	figures_dir = '/Users/jaime/github/papers/JADreport_VallecasIndex/figures/'
 	plt.figure()
 	plt.xlabel("Number of features selected")
 	plt.ylabel("Cross validation score (nb of correct classifications)")
@@ -358,7 +371,7 @@ def feature_selection_embedding_lasso(X,y):
 def plot_rf_importance(rf, X, y, image_name=None):
 	"""https://github.com/parrt/random-forest-importances/blob/master/notebooks/pimp_plots.ipynb
 	"""
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE/'
+	figures_dir = '/Users/jaime/github/papers/JADreport_VallecasIndex/figures/nonrandomAPOE/'
 	Imp = importances(rf, X, y)
 	viz = plot_importances(Imp)
 	viz.save(os.path.join(figures_dir, 'Vanilla_importances_' + image_name + '.svg'))
@@ -400,11 +413,12 @@ def visualize_DTfromRF(forest, feature_names, target_names):
 	graph.write_png(os.path.join(figures_dir,'tree_allfeatures.png'))
 
 
-def plot_rf_score(X,y,forest, nboffeats):
+def plot_rf_score(X,forest, nboffeats):
 	""" plot_rf_score Plot the feature importances of the forest
+	OUTDATED. REMOVE FUNCTION
 	"""
 
-	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/nonrandomAPOE'
+	figures_dir = '/Users/jaime/github/papers/JADr_vallecasindex/figures/'
 
 	criterion = forest.get_params()['criterion']
 	n_estimators = forest.get_params()['n_estimators']
@@ -421,15 +435,6 @@ def plot_rf_score(X,y,forest, nboffeats):
 	columns_imp = X.columns[indices_imp].tolist()
 	importances_imp = importances[indices_imp]
 	print('Most important features :', columns_imp) 
-	# Print the feature ranking
-	#for f in range(X.shape[1]):
-	#	print(" %d. feature %d (%f)" % ( f + 1, indices[f], importances[indices[f]]))
-	# Score with training dataset
-	print('Score: %f' % forest.score(X, y))
-	# Score Out of the bag (quasi test): evaluating our instances in the training set 
-	# using only the trees for which they were omitted.
-	#print('OOB Score %f' % forest.oob_score_) 
-	
 	# Plot most important features
 	figname = class_name + '_criterion_' + criterion + '_N_' + str(n_estimators) + '_weight_'+ class_weight +'.png'
 	plt.figure(figsize=(9,8))
@@ -439,8 +444,10 @@ def plot_rf_score(X,y,forest, nboffeats):
 	plt.xticks(range(X[columns_imp].shape[1]), columns_imp, fontsize=10)
 	plt.xlim([-1, X[columns_imp].shape[1]])
 	plt.xticks(rotation=90)
-	#plt.yticks(rotation=0)
 	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
+	#plt.yticks(rotation=0)
+
+	#plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
 	return [importances, indices_imp, columns_imp, importances_imp, std]
 
 
@@ -468,18 +475,24 @@ def baseline_classifier(X_train, y_train, X_test, y_test):
 	"""
 	
 	from sklearn.dummy import DummyClassifier
+	dummy_preds = []
 	# generates predictions uniformly at random.
 	uniform = DummyClassifier(strategy='uniform', random_state=42)
 	uniform.fit(X_train, y_train)
-
+	dummy_preds.append(uniform)
 	# always predicts the most frequent label in the training set.
 	frequent = DummyClassifier(strategy="most_frequent", random_state=42)
 	frequent.fit(X_train, y_train)
-
+	dummy_preds.append(frequent)
 	# generates predictions by respecting the training set’s class distribution.
 	stratified = DummyClassifier(strategy="stratified")
 	stratified.fit(X_train, y_train)
-	return [uniform, frequent,stratified]  
+	dummy_preds.append(stratified)
+	for dummy in dummy_preds:
+		pprint(dummy)
+		evaluate_model(dummy, X_test, y_test)
+		print('\n')
+	return dummy_preds
 
 def feature_selection_embedding(X, y, nboffeats):
 	"""feature_selection_embedding: select features wiuth random forest |Lasso
@@ -585,6 +598,91 @@ def important_forest(X, y,n_estimators,criterion,class_weight):
 	return forest
 
 
+def shap_values(model, X_test):
+	"""
+	"""
+	import shap
+	features = list(X_test.columns)
+	row_to_show = 2
+	data_for_prediction = X_test.iloc[row_to_show] 
+	data_for_prediction_array = data_for_prediction.values.reshape(1, -1)
+	model.predict_proba(data_for_prediction_array)
+
+	plt.figure()
+	shap.initjs()
+	shap_values = shap.TreeExplainer(model).shap_values(X_test)
+	#shap_values[0];shap_values[0]
+
+	fig = shap.summary_plot(shap_values[1], X_test)
+	plt.savefig(os.path.join(figures_dir, 'shap_vals.png'))
+	# Plot dependence of 2 features 0 and -1
+	fig2 = shap.dependence_plot(features[0], shap_values[1],X_test,interaction_index=features[-1])
+	plt.savefig(os.path.join(figures_dir, 'shap_feat0_vals.png'))
+
+
+def partial_dependence_plots(model, X_train):
+	"""partial_dependence_plots
+	"""
+	from pdpbox import pdp, get_dataset, info_plots
+	from itertools import combinations
+	feature_names = list(X_train.columns)
+	feature_names_inpairs = list(combinations(feature_names,2))
+
+	for feature in feature_names:
+		figname = 'pdp_plot_' + str(feature) + '.png'
+		print('pdp.pdp_isolate for:%s' %feature)
+		pdp_goals = pdp.pdp_isolate(model=model, dataset=X_train, model_features=feature_names, feature=feature)
+		fig, axes = pdp.pdp_plot(pdp_goals, feature)
+		fig.savefig(os.path.join(figures_dir, figname))
+
+	#Commented because pdp_interact_plot 2D plots has a bug  Bug here https://github.com/SauceCat/PDPbox/issues/37	
+	for pair in feature_names_inpairs:
+		figname = 'pdp_plot_pair_' + str(pair) + '.png'
+		inter1  =  pdp.pdp_interact(model=model, dataset=X_train, model_features=feature_names, features=pair)
+		fig, axes = pdp.pdp_interact_plot(pdp_interact_out=inter1, feature_names=pair, plot_type='contour', plot_pdp=True)
+		fig.savefig(os.path.join(figures_dir, figname))
+
+
+def permutation_importance_eli5(model,X_test, y_test ):
+	"""feature importance with permutation using eli5 library
+	"""
+	import eli5
+	from eli5.sklearn import PermutationImportance
+	from IPython.display import display, HTML
+
+	figname = 'permutimp_allfeats.html'
+	perm = PermutationImportance(model, random_state=42).fit(X_test, y_test)
+	image = eli5.show_weights(perm, feature_names = X_test.columns.tolist())
+	html = image.data
+	with open(os.path.join(figures_dir, figname), 'w') as f:
+		f.write(html)
+	print('HTML with permutation for fitted model at figname:%s' %figname)
+	return perm
+
+def permutation_importance_eli5_tofit(model,X_train, y_train, X_test, y_test ):
+	"""permutation_importance_eli5_tofit PermutationImportance without previous Fit
+	"""
+	# Feature Imnportance without previous Fit
+	import eli5
+	from eli5.sklearn import PermutationImportance
+	from sklearn.feature_selection import SelectFromModel
+	perm = PermutationImportance(model, cv=7, random_state=12)
+	perm.fit(X_train, y_train)
+	image = eli5.show_weights(perm,feature_names = X_test.columns.tolist())
+	html = image.data
+	figname = 'permutimp_allfeats_prefit.html'
+	with open(os.path.join(figures_dir, figname), 'w') as f:
+		f.write(html)
+	print('HTML with permutation for fitted model at figname:%s' %figname)
+	print('Important Features are:')
+	pprint(perm.feature_importances_ )
+	# Select features with increase in accuracy at least 0.05
+	sel = SelectFromModel(perm, threshold=0.001, prefit=True)
+	feature_idx = sel.get_support()
+	feature_name = X_train.columns[feature_idx]
+	print('Important features above thr::%s' % feature_name)
+	X_trans = sel.transform(X_train)
+	return sel
 
 def permutation_importances(rf, X_train, y_train, metric, image_name):
 	"""feature importance with permutation
@@ -731,7 +829,7 @@ def	change_DkDa_features(df):
 	"""change_DkDa_features: replace 9 by distribution with proportion
 	"""
 	featureswithnines =['ansi', 'tce','arri','cor', 'ictus', 'lipid', 'tir',\
-	'sue_con', 'sue_man','sue_ron', 'sue_rui', 'sue_hor','sue_mov','sue_pro','sue_suf','sue_rec']
+	'sue_con', 'sue_man','sue_ron', 'sue_rui', 'sue_hor','sue_mov','sue_pro','sue_suf','sue_rec', 'sdvive']
 	dfo = df.copy()
 	for feat in featureswithnines:
 		print(df[feat].value_counts())
@@ -782,12 +880,15 @@ def split_training_test_sets(df, target_label,test_size=None):
 	# Remove the labels from the features
 	features= df.drop(target_label, axis = 1)
 	feature_list = list(features.columns)
-	features = np.array(features)
+	features_transform_np = False
+	if features_transform_np is True:
+		features = np.array(features)
 	
 	#Split data into training and testing sets
 	if test_size is None:
 		test_size = 0.25
-	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size=test_size, stratify=labels, random_state=42)
+
+	train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size=test_size, stratify=labels, random_state=1)
 	print('Train Features Shape:', train_features.shape, '. Train Labels Shape:', train_labels.shape)
 	print('Test Features Shape:', test_features.shape, '. Test Labels Shape:', test_labels.shape, '\n')
 	print('Train_labels class distribution')
@@ -801,6 +902,10 @@ def split_training_test_sets(df, target_label,test_size=None):
 	ii = np.nonzero(y)[0]
 	print(np.vstack((ii,y[ii])).T)
 	print('Test labels ratio of 1/0s: %.4f' %(y[ii][-1]/y[ii][0]))
+	train_labels = train_labels.astype('int')
+	test_labels = test_labels.astype('int')
+	#X_train = X_train.astype('int')
+	#X_test = X_test.astype('int')
 	return train_features, test_features, train_labels, test_labels
 
 
@@ -873,7 +978,7 @@ def report_evaluation_metrics(clf, X_test, y_test, y_scores,file=None):
 	#np.array_equal(y_scores, y_scores2)
 
 	if file is None:
-		file = '/Users/jaime/github/papers/JADr_vallecasindex/reports/'+ str(random.randint(1,1234567890))+'.txt'
+		file = '/Users/jaime/github/papers/JADr_VallecasIndex/'+ str(random.randint(1,1234567890))+'.txt'
 	redirect_to_file('Best params:: \t', file)
 	text = str(clf.get_params()) + '\n'
 	redirect_to_file(text, file)
@@ -969,6 +1074,46 @@ def adjusted_classes(y_scores, t):
     """
     return [1 if y >= t else 0 for y in y_scores]
 
+def GridSearchRF(X_train, y_train, X_test, y_test):
+	"""
+	"""
+	skf = StratifiedKFold(n_splits=5)
+	clf = RandomForestClassifier(n_jobs=6, random_state=0)
+	param_grid = create_dict_hyperparameters()
+	scoring = create_dict_scorers()
+	#scoring = {'AUC': 'roc_auc', 'Accuracy': make_scorer(accuracy_score)}
+	# Setting refit='AUC', refits an estimator on the whole dataset with the
+	# parameter setting that has the best cross-validated AUC score.
+	refit_scores = ['precision_score', 'recall_score', 'f1_score', 'accuracy_score','AUC']
+	gs = GridSearchCV(clf, param_grid, refit=refit_scores[-1], scoring=scoring, cv=skf, return_train_score=True, n_jobs=6)
+	gs.fit(X_train, y_train)
+	print('Best estimator: ')
+	print(gs.best_estimator_)
+	print('Best params: ')
+	print(gs.best_params_)
+	print('Best index: ')
+	print(gs.best_index_)
+	
+	y_pred = gs.best_estimator_.predict(X_test)
+	# print('Best params for {}'.format(refit_score))
+
+	# confusion matrix on the test data.
+	print('\nConfusion matrix of Random Forest')
+	print(pd.DataFrame(confusion_matrix(y_test, y_pred),columns=['pred_neg', 'pred_pos'], index=['neg', 'pos']),'\n')
+
+	# scoring metrics for each configuration of hyperparameters
+	#results = pd.DataFrame(gs.cv_results_)
+	cvres = gs.cv_results_
+	for mean_score, params in zip(cvres["mean_test_accuracy_score"], cvres["params"]):
+		print(mean_score, params)
+
+
+	# sortedby = 'mean_test_'+ 'recall_score' #mean_test_AUC
+	# results = results.sort_values(by=sortedby, ascending=False)
+	# #results[['mean_test_accuracy_score','mean_test_recall_score', 'mean_test_precision_score', 'param_max_depth', 'param_max_features', 'param_min_samples_split', 'param_n_estimators']].round(3).head()
+	# pprint(results[['mean_test_accuracy_score','mean_test_recall_score', 'mean_test_precision_score', 'param_max_depth', 'param_max_features']])
+	pdb.set_trace()
+	return gs
 
 def grid_search_wrapper(X_train, y_train, X_test, y_test,refit_score, param_grid=None, scorers=None):
     """
@@ -1012,7 +1157,8 @@ def create_dict_hyperparameters():
 	"""
 	#param_grid = {'class_weight':[None, 'balanced'], 'min_samples_leaf':[3, 6], 'min_samples_split':[3, 5, 10], 'n_estimators':[100, 1000, 10000],'max_depth': [3, 5, 7], 'max_features': [3, 5, 10, 20]}
 	#param_grid = {'class_weight':[None, 'balanced'], 'min_samples_leaf':[ 12,14,16],'min_samples_split':[6,8,10],'n_estimators':[1000, 10000]}
-	param_grid = {'class_weight':['balanced'], 'criterion':['gini', 'entropy'],'min_samples_leaf':[4,6,8], 'min_samples_split':[4,6,8], 'n_estimators':[1000,10000,100000],'max_depth': [2,3,5,7], 'max_features': [10,20,30,40]}
+	#param_grid = {'class_weight':['balanced'], 'criterion':['gini', 'entropy'],'min_samples_leaf':[4,6,8], 'min_samples_split':[4,6,8], 'n_estimators':[1000,10000,100000],'max_depth': [2,3,5,7], 'max_features': [10,20,30,40]}
+	param_grid = [{'class_weight':['balanced'],'n_estimators':[1000,10000]},  {'class_weight':['balanced'],'min_samples_leaf':[4,6],'max_depth': [2,3], 'max_features': [2,4]},  {'class_weight':['balanced'],'min_samples_leaf':[4,6,8],'max_depth': [2,3,4], 'max_features': [2,4,6],'n_estimators':[100,1000,10000],'min_weight_fraction_leaf':[0.0, 0.2, 0.4],'min_impurity_decrease':[0.0,0.1,0.2]}]
 	# recommended Breiman m = sqrt(X.shape)
 	pprint(param_grid)
 	return param_grid
@@ -1027,7 +1173,8 @@ def create_dict_scorers():
 	'precision_score': make_scorer(precision_score),
 	'recall_score': make_scorer(recall_score),
 	'accuracy_score': make_scorer(accuracy_score),
-	'f1_score': make_scorer(f1_score)
+	'f1_score': make_scorer(f1_score),
+	'AUC': 'roc_auc'
 	}
 	
 	pprint(scorers)
@@ -1040,20 +1187,22 @@ def train_RF(X_train, y_train, X_test, y_test):
 	from sklearn.ensemble import RandomForestClassifier
 
 	n_estimators = 10000
-	rf = RandomForestClassifier(n_estimators = n_estimators, class_weight='balanced_subsample',\
-	 min_samples_leaf=5, min_samples_split=10, bootstrap=True,max_features = 10, max_depth=3, verbose=1, random_state = 42)
+	rf = RandomForestClassifier(random_state=1)
+	#rf = RandomForestClassifier(n_estimators = n_estimators, class_weight='balanced_subsample',min_samples_leaf=5, min_samples_split=10, bootstrap=True, max_features = 2, max_depth=3, verbose=1, random_state = 42)
 	print_classsifier_parameters(rf) 
 	rf.fit(X_train, y_train)
 	return rf 
 
 def dataset_cleanup(dataframe):
 	"""end2end_data_preparation: remove Dont know dont ask, remove redundant features
-								convert float into int 
 	""" 
+	
 	# Descriptive statistics for each column
 	dataframe.describe()	
-	# remove redundant features ['nivelrenta', 'educrenta']
-	#dataframe = remove_features_redundant(dataframe)
+	# remove redundant features ['nivelrenta', 'educrenta'] eqm10 eqm83 correlated with scd
+	# a13 correlated with anos escolaridad
+	redundant = ['a13','nivelrenta', 'educrenta','eqm10_visita1','eqm83_visita1']
+	dataframe = remove_features_redundant(dataframe, redundant)
 	# replace features dont know dont answer 9
 	dataframe = change_DkDa_features(dataframe)
 	# cast to int some features eg conversionmci
@@ -1072,6 +1221,7 @@ def translate_PVfeatures(features_spa):
 
 		return features_eng
 
+
 def fit_Best_RF(X_train, y_train, X_test, y_test):
 	"""
 	"""
@@ -1088,36 +1238,96 @@ def fit_Best_RF(X_train, y_train, X_test, y_test):
 		# Prediction y_scores [0,1]
 		y_scores = clf_best.predict(X_test)
 		eventid = datetime.now().strftime('%Y%m%d-%H%M%S_')
-		filereport = '/Users/jaime/github/papers/JADr_vallecasindex/reports/reportscv5/'+ eventid + str(refit_score) + '.txt'
+		filereport = '/Users/jaime/github/papers/JADr_vallecasindex/reports/'+ eventid + str(refit_score) + '.txt'
 		filereports.append(filereport)
 		report_evaluation_metrics(clf_best, X_test, y_test, y_scores, filereport)
 	
-		print('Probabilistc prediction y_score Real numbers and binarized with threshold \n')	
-		y_scores_proba = clf_best.predict_proba(X_test)[:,1]
-		# Binarize predictions R \to [0,1] with threshold
-		y_pred_adj = adjusted_classes(y_scores, 0.47)
-		#report_evaluation_metrics(clf_best, X_test, y_test, y_pred_adj,filereport)
-		precision, recall, threshold = plot_precision_recall_curve(y_test,y_scores_proba,refit_score,clf_best)
-		plot_precision_recall_vs_threshold(precision, recall, threshold, refit_score)
-		plot_roc_curve(y_test,y_scores_proba,refit_score)
+		# print('Probabilistc prediction y_score Real numbers and binarized with threshold \n')	
+		# y_scores_proba = clf_best.predict_proba(X_test)[:,1]
+		# # Binarize predictions R \to [0,1] with threshold
+		# y_pred_adj = adjusted_classes(y_scores, 0.47)
+		# #report_evaluation_metrics(clf_best, X_test, y_test, y_pred_adj,filereport)
+		# precision, recall, threshold = plot_precision_recall_curve(y_test,y_scores_proba,refit_score,clf_best)
+		# plot_precision_recall_vs_threshold(precision, recall, threshold, refit_score)
+		# plot_roc_curve(y_test,y_scores_proba,refit_score)
 	print('DONE fit_Best_RF see results in::')
 	pprint(filereports)
+	pdb.set_trace()
 	return
 
+def select_important_features_fitted_RF(rf, X, topN=None):
+	"""select_important_features_fitted_RF
+	Args:fitted RF X for colum names and topN = 3, 3 top features 
+	Output: list fi topN feature names
+	"""
+	if topN is None:
+		topN = 6
+	# Select important features
+	importances = list(rf.feature_importances_)
+	# List of tuples with variable and importance
+	std = np.std([tree.feature_importances_ for tree in rf.estimators_],axis=0)
+	feature_importances = [(feature, round(importance, 3), round(stdev,3)) for feature, importance, stdev in zip(X.columns, importances,std)]
+	feature_importances = sorted(feature_importances, key = lambda x: x[1], reverse = True)
+	[print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
+	suma1 = [t[1] for t in feature_importances]; np.sum(suma1) ==1
+	# Important features above a threshold
+	feature_importances_abv = [t for t in feature_importances if t[1] > 0.02]
+	[print('\nVariable thr: {:20} Importance: {}'.format(*pair)) for pair in feature_importances_abv]
+	topfeats_thr = sorted(feature_importances_abv, key=lambda t: feature_importances_abv[1], reverse=True)[:topN]
+	print('Top N features:'); pprint(topfeats_thr)
+	
+	feature_top_names = [t[0] for t in feature_importances][:topN]
+	plot_feature_importance(rf, [t for t in feature_importances][:topN])
+	#plot_rf_score(X[feature_top_names],rf, 6)
+	return feature_top_names
+
+def plot_feature_importance(rf, feature_importances_abv):
+	"""plot_feature_importance plot important features saved in figures/dateformat.png
+	"""
+	import datetime
+	DT = datetime.datetime.now()
+	figures_dir = '/Users/jaime/github/papers/JADr_VallecasIndex/figures/'
+	figname = 'importance_' + str(DT.year) + str(DT.month) + str(DT.day) + str(DT.hour) + str(DT.minute) + str(DT.second) + '.png'
+	#std = np.std([tree.feature_importances_ for tree in rf.estimators_],axis=0)
+	#importance_vals = rf.feature_importances_
+	#indices = np.argsort(importance_vals)[::-1]
+	fig,ax = plt.subplots()
+	plt.title('Feature Importances')
+	importances = [t[1] for t in feature_importances_abv]
+
+	#ax.barh(range(len(feature_importances_abv)), importances, color='b', align='center')
+	plt.bar(range(len(feature_importances_abv)), [t[1] for t in feature_importances_abv],yerr=[t[2] for t in feature_importances_abv], align="center")
+	#ax.set_yticks(range(len(feature_importances_abv)), [t[0] for t in feature_importances_abv])
+	plt.xticks(range(len(feature_importances_abv)), ([t[0] for t in feature_importances_abv]))
+	plt.xlabel('Relative Importance')
+	plt.xticks(rotation=90, size=8)
+	plt.savefig(os.path.join(figures_dir, figname), dpi=240,bbox_inches='tight')
+	return
+
+
+def normalized_data(X):
+	from sklearn import preprocessing
+	x = X.values #returns a numpy array
+	min_max_scaler = preprocessing.MinMaxScaler()
+	standard_scaler = preprocessing.StandardScaler()
+	x_mm = min_max_scaler.fit_transform(x)
+	x_std = standard_scaler.fit_transform(x)
+	dfmm = pd.DataFrame(x_mm)
+	dfstd = pd.DataFrame(x_std)
+	return dfmm, dfstd
 ##################################################################################
 ##################################################################################
 ##################################################################################
 ##################################################################################
 ##################################################################################
 def main():
-
+	np.random.seed(42)
 	#importlib.reload(JADr_paper);import JADr_paper; JADr_paper.main()
 	print('Code for JADr paper on Feature Selection to Build the Vallecas Index\n')
 	# open csv with pv databse
 	plt.close('all')
-	csv_path = '~/vallecas/data/BBDD_vallecas/Vallecas_Index-Vols134567-22April2019.csv'
+	csv_path = '~/vallecas/data/BBDD_vallecas/Vallecas_Index-Vols1234567-07June2019.csv'
 
-	figures_path = '/Users/jaime/github/papers/EDA_pv/figures/'
 	dataframe = pd.read_csv(csv_path)
 	# Copy dataframe with the cosmetic changes e.g. Tiempo is now tiempo
 	dataframe_orig = dataframe.copy()
@@ -1128,46 +1338,70 @@ def main():
 	target_label = 'conversionmci'
 	X,y = select_PVdictio(dataframe, features_dict,target_label)
 	X = dataset_cleanup(X)
+	# Normalize mm min max no normal distrib
+	# Xmm, Xnorm = normalized_data(X)
+	# X = Xmm.copy()
 	# encode Real features ['renta', 'pabd', 'talla', 'imc', 'peso']
 	toq = ['renta', 'pabd', 'talla', 'imc', 'peso', 'ejfisicototal','edad_visita1']
 	X = encode_in_quartiles(X, toq)
 	df_pv = X.copy()
 	df_pv[y.name] = y
-	# split train and test sets
-	test_size = 0.25
-	[X_train, X_test, y_train, y_test] = split_training_test_sets(df_pv, target_label, test_size)
-	#X_train = X_train.astype('int')
-	#X_test = X_test.astype('int')
-	y_train = y_train.astype('int')
-	y_test = y_test.astype('int')
+	#df_pv[y.name] = pd.Series(y[0:], index=df_pv.index)
 	
-	# set the goal about how good our classifier must be
+	test_size = 0.20
+	[X_train, X_test, y_train, y_test] = split_training_test_sets(df_pv, target_label, test_size)
+	
+	# Baseline classifier [uniform, frequent, stratified]
 	dummy_preds = baseline_classifier(X_train, y_train, X_test, y_test)
-	for dummy in dummy_preds:
-		pprint(dummy)
-		evaluate_model(dummy, X_test, y_test)
-		print('\n')
+
+	# Fit a model (RF) all initial features
+	rf = train_RF(X_train, y_train, X_test, y_test)
+	feature_top_names = select_important_features_fitted_RF(rf,X_train, 14)
+	# Datafreme of important dataframe
+	Ximp = X[feature_top_names]
+	#Ximp[y.name] = y
+	Ximp.insert(0, y.name,y,allow_duplicates=False)
+	# split train and test sets of important features
+	# test_size = 0.3
+	[X_train, X_test, y_train, y_test] = split_training_test_sets(Ximp, target_label, test_size)
+	rf = train_RF(X_train, y_train, X_test, y_test)
+	f_top_names = select_important_features_fitted_RF(rf, X[feature_top_names],6)
+	print('Calling to permutation_importance_eli5 ...')
+	permutation_importance_eli5(rf, X_test, y_test)
+	permutation_importance_eli5_tofit(rf,X_train, y_train, X_test, y_test)
+
+	partial_dependence_plots(rf, X_train)
+	pdb.set_trace()
+	shap_values(rf, X_test)
+	return
 
 	# build model and tuning model	
-	fit_Best_RF(X_train, y_train, X_test, y_test)
-	pdb.set_trace()
+	#fit_Best_RF(X_train, y_train, X_test, y_test)
+	#[importances, indices_imp, columns_imp, importances_imp, std] = plot_rf_score(X,y,rf, 14)
 
 	# train and evaluate base model RF no Hyperparameter tunning
 	rf = train_RF(X_train, y_train, X_test, y_test)
+	y_scores = rf.predict(X_test)
 	report_evaluation_metrics(rf, X_test, y_test, y_scores)
-	[importances, indices_imp, columns_imp, importances_imp, std] = plot_rf_score(X,y,rf, 14)
 	
-	#visualize_DTfromRF(rf,df_pv.columns ,y.name)
-	importances = list(rf.feature_importances_)
-	# List of tuples with variable and importance
-	feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(X.columns, importances)]
 
-	# Sort the feature importances by most important first
-	feature_importances = sorted(feature_importances, key = lambda x: x[1], reverse = True)
-
-	# Print out the feature and importances 
-	[print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances];
+	# split train and test sets
+	test_size = 0.25
+	[Ximp_train, Ximp_test, y_train, y_test] = split_training_test_sets(Ximp, target_label, test_size)
+	y_train = y_train.astype('int')
+	y_test = y_test.astype('int')
 	pdb.set_trace()
+	# train and evaluate base model RF no Hyperparameter tunning
+	rf2 = train_RF(Ximp_train, y_train, Ximp_test, y_test)
+	y_scores2 = rf2.predict(Ximp_test)
+	report_evaluation_metrics(rf2, Ximp_test, y_test, y_scores2)
+	# build model and tuning model hyperparameters
+	GridSearchRF(Ximp_train, y_train, Ximp_test, y_test)
+	#fit_Best_RF(Ximp_train, y_train, Ximp_test, y_test)
+
+
+	#[importances, indices_imp, columns_imp, importances_imp, std] = plot_rf_score(X,y,rf, 14)
+	#visualize_DTfromRF(rf,df_pv.columns ,y.name)
 
 	# select rows with 5 visits
 	visits=['tpo1.2', 'tpo1.3','tpo1.4', 'tpo1.5','tpo1.6']

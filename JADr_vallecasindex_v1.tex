@@ -109,8 +109,9 @@
 %% \address{Address\fnref{label3}}
 %% \fntext[label3]{}
 
-\title{The Vallecas Index: selecting the most important self-assessed features for conversion to Mild Cognitive Impairment with Random Forests.}
+%\title{The Vallecas Index: selecting the most important self-assessed features for conversion to Mild Cognitive Impairment with Random Forests.}
 
+\title{Selecting the most important self-assessed features for conversion to Mild Cognitive Impairment with Random Forests and Permutation-based methods.}
 %% use optional labels to link authors explicitly to addresses:
 %% \author[label1,label2]{<author name>}
 %% \address[label1]{<address>}
@@ -285,6 +286,9 @@ Sleep & Subjective Cognitive Decline\\
     &tobacco&smoker now or past[0,1]\\ %tabac 
     &heart&no heart problem, angina, infarct [0,1,2]\\ %cor
     &arrythmia&No Arrhythmia, Atrial fibrillation, Arrhythmia [0,1,2]\\ %arri
+    &thyroidism&hNo, hyper, hipo thyroidism [0,1,2]\\ %tir
+    &ictus&hNo, Ischaemic, haemorrhagic [0,1,2]\\ %ictus
+
     \hline
     
     \multirow{10}{*}{Quality of Life}
@@ -326,11 +330,11 @@ Sleep & Subjective Cognitive Decline\\
     &rel-friends&frequency see friends [1..5]\\%relaamigo 
     &rel-fami&freq. see family [1..5]\\ %relafami
     &rel-leis&freq. leisure outside [1,2,3]\\%'relaocio_visita1'
-    &rel-lone&freq. felling alone [1,2,3]\\ %'rsoled_visita1'
+    &rel-lone&freq. feeling alone [1,2,3]\\ %'rsoled_visita1'
     
     \hline
     \multirow{1}{*}{Traumatic Brain Injury}
-    &tbi&episode(s) of TBI [0,1]\\
+    &tbi&episode(s) of TBI [0,1]\\ %tce
     \hline
     
     \multirow{11}{*}{Sleep}
@@ -525,147 +529,281 @@ Equation \ref{eq:sv} shows the Shapley value or the feature contribution to the 
 
 Shapley values is arguably the best permutation-based method for explaining the effects of feature values in the average prediction. Furthermore, Shapley value satisfies the properties of \emph{Efficiency} (feature contributions must add up to the difference of prediction for an instance and the average), \emph{Symmetry} (the contributions of two feature values are the same if they contribute equally to all possible coalitions), \emph{Dummy} (a feature that does not change the predicted value has a Shapley value of 0) and \emph{Additivity} (in the case of a random forest, for a feature value, the average of the Shapley value for each tree individually is equal to the Shapley value for the feature value for the random forest). Shapley Values are discussed very clearly and in great length in \cite{molnar2018interpretable}.
 
-
-
 \section{Results}
 \label{se:res}
 
-We are interested in selecting the most important self-assessed features for conversion to MCI for subjects that have at least 2 visits (964 subjects). The number of subjects that converted to MCI is 156 subjects ($\sim 17\%$ conversion rate). The automated feature selection problem is analyzed using the different methods defined in the previous section. 
+We are interested in selecting the most important self-assessed features for conversion to MCI for subjects that have at least 2 visits (964 subjects). The number of subjects that converted to MCI is 156 subjects ($\sim 17\%$ conversion rate) and the number of features is 85 (Table \ref{tab:multicol}). The automated feature selection problem is analyzed using the methods defined in the previous section -filter method, random forest feature importance and permutation-based importance. 
 
 \subsection{Filter method}
 According to the \emph{one in ten} rule discussed in Section \ref{sse:Howmany}
-the number of features to be retained is 15. Figure \ref{fig:rf14} shows the feature importance results using the filter method \emph{SelectKBest} \cite{scikit-learn}. The 15 most important features for conversion to MCI using the \emph{SelectKBest} method ($k=15$) are shown in the figure. The score function used, $\tilde{\chi}^2$, gives the $\tilde{\chi}^2$ statistic between each input feature and the target feature (conversion to MCI). A large value in $\tilde{\chi}^2$ statistic can be interpreted as the input feature is non-randomly related to the target feature. The Pearson's correlation between features is also shown (only when $r >0.1$) in the figure. 
+the number of features to be retained is 15 ($10\% of the number of cases in the positive class, 156$). Figure \ref{fig:rf14} shows the feature importance results using the filter method \emph{SelectKBest} \cite{scikit-learn}. The 15 most important features for conversion to MCI using the \emph{SelectKBest} method ($k=15$) are shown in the figure. The score function used, $\tilde{\chi}^2$, gives the $\tilde{\chi}^2$ statistic between each input feature and the target feature (conversion to MCI). A large value in $\tilde{\chi}^2$ statistic can be interpreted as the input feature is non-randomly related to the target feature. The Pearson's correlation between features is also shown (only when $r >0.1$) in the figure. 
 
 %The most highly correlated feature to conversion to MCI is use of information technologies ($r<-0.1$). 
-The most important features according to the \emph{SelectKBest} algorithm are in this order: subjective cognitive decline, APOE\footnote{APOE is not a self-assessed feature but it provides valuable information and allows us to have an idea about the importance of lifestyle and self-assessed variables compared to genetic variables}, number of residents at home, age, use of IT, diet high in sweets, memory complaints for daily life tasks, body mass index, fast food fats, sweets, memory complaints to remembering object names, thyroid related problems, relationship with friends, schooling years, number of sons and daughters and smoking habits (present and past).
+The features are ordered in importance in X and Y axis (increasing importance from bottom to top or from left to right). The target feature, conversion to MCI is also included in order to show the correlation between the important features and the target. 
+The largest Pearson's correlation with conversion to MCI is the feature subjective cognitive decline $\rho(scd, target) = 0.083$. All the features have a correlation below $0.1, \rho(x, target), \forall x in S' < |0.1|$. The Pearson's correlation among all pair of features including the output target (conversion to MCI) are shown only for $r>0.1$. The strongest correlation, $r>0.24$ is for smoking habits and years of schooling. The cigarette-lung cancer link was not fully acknowledge till at least the late sixties \cite{proctor2012history} and the habit smoking was more extended in educated women than it was in women in the rural milieu.
+
+The most important features according to the \emph{SelectKBest} algorithm are in this order: subjective cognitive decline, APOE\footnote{APOE is not a self-assessed feature but it provides valuable information and allows us to have an idea about the importance of lifestyle and self-assessed variables compared to genetic variables}, number of residents at home, age, diet high in sweets, body mass index, thyroid related problems, history of heart health, relationship with friends, total number of schooling years, number of children, smoking habits(present and past), sleep noises, auditory deficit and glucose metabolism. 
 
 %YS: Create again this figure with 15 features and take note of the corr with the target of each feature.
-%YS Say number of feature, which are removed for low variance
 \begin{figure}[!htb]
         \centering
-        \includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/HeatmapTopF_chi2}
-        \caption{Evaluation of the importance of features for conversion to MCI classification using the filter method \emph{SelectKBest}. The 14 features most informative for MCI conversion are displayed in order of importance (first subjective cognitive decline, last smoking) in both axis. Conversion to MCI is displayed in the last row. The Pearson's correlation among all pair of features including the output target (conversion to MCI) are shown when $r>0.1$ } 
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/ENG_HeatmapTopF_chi2}
+        \caption{Evaluation of the importance of features for conversion to MCI classification using the filter method \emph{SelectKBest}. The 15 features most informative for MCI conversion are displayed in order of importance (first subjective cognitive decline, last glucose metabolism) in both axis. Conversion to MCI is displayed in the last row/column. The Pearson's correlation among all pair of features including the output target (conversion to MCI) are shown when $r>0.1$. } 
         \label{fig:rf14}
 \end{figure}
 
+% YS: maybe do a regression model with the 15 features and get compute r^2 for a regression
+%YS: Include, maybe table with the correlation 
+% \begin{tabular}{l*{6}{c}r}
+% Team              & P & W & D & L & F  & A & Pts \\
+% \hline
+% Manchester United & 6 & 4 & 0 & 2 & 10 & 5 & 12  \\
+% Celtic            & 6 & 3 & 0 & 3 &  8 & 9 &  9  \\
+% Benfica           & 6 & 2 & 1 & 3 &  7 & 8 &  7  \\
+% FC Copenhagen     & 6 & 2 & 1 & 3 &  5 & 8 &  7  \\
+% \end{tabular}
+% (Pdb) covmatrix.ix[-1]
+% scd_visita1         0.083097
+% apoe                0.088946
+% sdvive              0.072691
+% edad_visita1        0.077499
+% aldulc              0.079210
+% imc                -0.069719
+% tir                -0.039927
+% cor                 0.038622
+% relaamigo           0.059281
+% anos_escolaridad   -0.022502
+% numhij             -0.042221
+% tabac              -0.035062
+% sue_rui             0.042096
+% audi               -0.046031
+% sdocupac            0.030990
+% conversionmci       1.000000
+
+%dot -Tpng tree_example.dot -o tree_example.png
 \subsection{Embedded method: Random forest}
 %https://stats.stackexchange.com/questions/36165/does-the-optimal-number-of-trees-in-a-random-forest-depend-on-the-number-of-pred
 %Random forests does not overfit. You can run as many trees as you want https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#remarks
 %https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 
-Although, in random forest model having highly correlated variables may not bring in multi-collinearity issues, it is however advisable to take care of redundancy before training a random forest. This is because having a large set of variables containing similar information may induce the the model to weight too much on this set rather than the others.
-We remove all low-variance features (training-set variance lower than $20\%$ threshold). Furthermore feature \emph{a13} (use of /IT) is removed since it is strongly correlated with \emph{years of schooling}, \emph{eqm10} and \emph{eqm83} are also removed since they are correlated with \emph{scd (subjective cognitive decline)}. 
-
-Figure \ref{fig:RF_selectorgini} shows the 14 most informative features using Random forests. The importance of a feature is computed as the (normalized) total reduction of the Gini importance (the mean decrease impurity \ref{eq:gini}) brought by that feature \cite{breiman2017classification}. The higher the importance 
-the more useful the feature, that is the, the better splits the data in the tree. The sum of the importance of all features sums up 1.
+Although, in principle, random forest do not suffer from multi-collinearity issues due to highly correlated features, it is however advisable to take care of redundancy before training a random forest. As a matter of fact, having a large set of variables containing similar information may induce the the model to weight heavily on this set in detriment of others \cite{strobl2007bias}. 
+%https://stats.stackexchange.com/questions/141619/wont-highly-correlated-variables-in-random-forest-distort-accuracy-and-feature
+Low-variance features (training-set variance lower than the $20\%$ threshold) are removed. Feature \emph{a13} (use of IT) is removed since it is strongly correlated with \emph{years of schooling}, \emph{eqm10} and \emph{eqm83} are also removed since they are correlated with \emph{scd (subjective cognitive decline)}, finally educational level is removed since is strongly correlated with total number of schooling years.. 
+%redundant = ['a13','sdocupac','eqm10_visita1','eqm83_visita1','nivel_educativo']
 
 %How the forest is fitted!!
 %https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
-Whenever we build a random forest we need to perform Hyperparameter Tuning. Hyperparameters are parameters that  are  adjusted in order to optimize performance. Note the difference with model parameters per se which are learned during training. Hyperparameters are outside the model in the sense that are set by the scientist before training.
-For hyperparameter tuning, we perform K-Fold ($K=5$) cross validation, that is, we split the training set into K  folds (subsets of the training set, then we iteratively fit the model K times, each time training the data on K-1 of the folds and evaluating on the Kth fold. To find the best hyperparameters we use the RandomizedSearchCV method, define a grid of hyperparameter ranges, and randomly sample from the grid, performing K-Fold CV with each combination of values. The set of hyperparameters are: bootstrap=True, class weight='balanced subsample',  criterion='gini', max depth=3, max features=2, max leaf nodes=None, min impurity decrease=0.0, min samples leaf=5, min samples split=10, min weight fraction leaf=0.0, n estimators=1000.
-The maximum depth is the maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min samples split samples. 
-The class weight  specifies the weight associated with each class, when “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data, that is, in our case the converters have $1/0.14=7.14 \times$ weight than the non converters. 
-The function to measure the quality of a split is the Gini impurity. The number of leaf nodes is unlimited (max leaf nodes=None), the minimum of impurity decrease specifies that a node will be split if this split induces a decrease of the impurity greater than or equal to this value (0.0). The minimum samples leaf (default=1) is the minimum number of samples required to be at a leaf node. 
+Whenever we build a random forest we need to tune the hyperparameters which need to be    adjusted in order to optimize the desired performance metric. Hyperparameters are outside the model in the sense that are set by the modeler before training. Note the difference with model parameters which are learned during training. The hyperparameter tuning consists in  K-Fold ($K=5$) cross validation, that is, we split the training set into K folds (subsets of the training set), then we iteratively fit the model $K$ times, each time training the data on $K-1$ folds and evaluating on the $K$-th fold. 
+To find the best hyperparameters we use a dual approach, first we use randomized search to randomly sample from the grid of hyperparameter range. The set of hyperparameters returned in the randomized search is used to inform the Grid search method run afterwards and that  exhaustively searches all possible combination of hyperparameters.
+
+The set of optimal hyperparameters obtained are defined in Table \ref{tab:hyper}.
+\begin{table}\label{tab:hyper}
+    \centering
+\begin{tabularx}{\linewidth}{|L|c|L|} 
+    \hline
+\textbf{Hyperparameter } & \textbf{Value} & \textbf{Description} \\ 
+    \hline
+bootstrap & True & Whether bootstrap samples are used when building trees. If False, the whole dataset is used to build each tree.  \\ 
+    \hline
+class weight & balanced&  weight associated with each class\\
+    \hline
+ criterion & Gini & function to measure the quality of split \\ 
+    \hline
+ max depth & 3& maximum depth of the tree\\
+    \hline
+max features & 2 & number of features to consider for the best split \\ 
+    \hline
+min samples leaf & 0& minimum number of samples required to be at a leaf node\\
+    \hline
+min samples split &2 & minimum number of samples required to split an internal node \\ 
+    \hline
+estimators & 100 &total number of trees in the forest\\
+  \hline
+\end{tabularx}
+\caption{RandomForestClassifier \cite{}}
+\end{table}
+
+
+
+%:bootstrap=True, class weight='balanced subsample', criterion='gini', max depth=3, max features=2, max leaf nodes=None, min impurity decrease=0.0, min samples leaf=5, min samples split=10, min weight fraction leaf=0.0, n estimators=1000.
+%The maximum depth is the maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min samples split samples. The class weight  specifies the weight associated with each class, when “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data, that is, in our case the converters have $1/0.14=7.14 \times$ weight than the non converters. The function to measure the quality of a split is the Gini impurity. The number of leaf nodes is unlimited (max leaf nodes=None), the minimum of impurity decrease specifies that a node will be split if this split induces a decrease of the impurity greater than or equal to this value (0.0). The minimum samples leaf (default=1) is the minimum number of samples required to be at a leaf node. 
 %A split point at any depth will only be considered if it leaves at least min_samples_leaf training samples in each of the left and right branche
-The minimum samples split (default=2) is the minimum number of samples required to split an internal node. The number of estimators=1000 is the number of trees in the forest.
+%The minimum samples split (default=2) is the minimum number of samples required to split an internal node. The number of estimators=1000 is the number of trees in the forest.
 
 %YS params_ = grid.best_params_ 
 %'class_weight': 'balanced', 'max_depth': 2, 'max_features': 4, 'min_impurity_decrease': 0.0, 'min_samples_leaf': 4, 'min_weight_fraction_leaf': 0.4, 'n_estimators': 10000
 
-% Show one tree as an example
-
-Figure \ref{fig:one_tree} 
+%A random forest is a meta estimator that fits a number of decision tree classifiers on various sub-samples of the dataset and uses averaging to improve the predictive accuracy and control over-fitting. The sub-sample size is always the same as the original input sample size but the samples are drawn with replacement if bootstrap=True (default). The mean decrease in impurity importance of a feature is computed by measuring how effective the feature is at reducing uncertainty (classifiers) or variance (regressors) when creating decision trees within Random Forest. As a classifier, random forest performs an implicit feature selection, using a small subset of strong variables for the classification only, leading to its superior performance on high dimensional data. 
+For the sake of illustration, Figure \ref{fig:one_tree} shows one tree out of the 100 trees built in the forest. 
+% The hyperparameter "maximum depth" has been set to 3 for clarity. If this parameter is not set, the tree will likely overfit the data.
 \begin{figure}[!htb]
         \centering
-        \includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/tree}
-        \caption{The figure shown one tree of the random forest. The hyperparameter "maximum depth" has been set to 3 for clarity. If this parameter is not set, the tree will likely overfit the data. The root of the tree is the node with the highest Gini score. A random forest is a meta estimator that fits a number of decision tree classifiers on various sub-samples of the dataset and uses averaging to improve the predictive accuracy and control over-fitting. The sub-sample size is always the same as the original input sample size but the samples are drawn with replacement if bootstrap=True (default). The mean decrease in impurity importance of a feature is computed by measuring how effective the feature is at reducing uncertainty (classifiers) or variance (regressors) when creating decision trees within Random Forest. As a classifier, random forest performs an implicit feature selection, using a small subset of strong variables for the classification only, leading to its superior performance on high dimensional data.} 
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/tree_example2}
+        \caption{The figure shows one tree of the random forest. The root of the tree is the node with the highest Gini score, subjective cognitive decline scd.
+        The nodes closer to the root are mre important than those at the bottom of the tree as the Gini value included in each mode indicates. 
+        The maximum depth of the tree is 6. Nodes with red color refer to samples that fall into the group of non converter to MCI, the boxes with blue color groups the converters.} 
         \label{fig:one_tree}
 \end{figure}
-%YS
-The most important feature is subjective cognitive decline, followed by number of sons and daughters, schooling years, working years, hours of night sleep, the self perceived economic status, number of sons and daughters, hours of diurnal sleep, relationship with friends, number of people living at home, diet high in sweets, age, diet rich in legumes and APOE.
-There is a visible overlap in the important features using random forest and the linear \emph{SelectKBest} method. The most interesting difference worth discussing is that APOE in random forest drops in importance. In random forest sleeping patters also appear as among important features which were not captured in the linear method. 
-Interestingly, the subjective cognitive decline is not only the most important feature (highest Gini score in the y-axis) it is also the feature with the shortest inter-tree variability (the random forest implementation shown contains 100,000 trees). The inter-tree variability is represented in the figure with black thin bars. 
+
+%YS: Compare random forest performance with dummies
+Inherent in the hyperparameter tuning process is the evaluation criterion used. 
+The evaluation criterion consists in computing scoring objects that gives us information about model performance, for example, accuracy. Embedded methods such as random forest have the evaluation metric built in the model during the learning process, in our case we build random forest that tries maximize the accuracy score.
+Dummy classifiers provide a null metric and work as a sanity check on the model’s performance. Figure \ref{fig:dummies} shows the random forest accuracy and how it compares with three dummy predictors: random predictor, majority predictor and minority predictor. The random predictors predicts with equal probability that a subject has or has not MCI, $p(x, MCI)=p(x, not MCI) = 0.5$. The majority predictor predicts always the majority class (not MCI), $p(x, not MCI)=1$, and conversely the minority predictor always predicts the minority class, $p(x, MCI)=1$. The random forest accuracy is practically as good as the accuracy for the classifier that always predicts the minority class. 
+
+%YS:  other metric are low  print(recall_score(y_test,y_scores)) 
+%CODE: y_score = rf.predict(X_test), accuracy_score(y_test,y_scores). dummy_scores
+
+%Whenever the model’s performance is close to the null accuracy baseline of a dummy classifier we likely are in any of these cases: Featuresareineffectiveormissing, oorchoiceofhyperparametersorkernelinthemodel, Largeclassimbalance
+%YS Figure comparing accuracy (others?) metric with Dummy classifiers
+
+\begin{figure}[!htb] 
+        \centering
+        \includegraphics[keepaspectratio, width=0.6\linewidth]{figures/inpaper/dummies_vs_rf}
+        \caption{Comparative analysis of accuracy score for the built random forest predictor (in blue) and 3 dummy predictors (in red). The random forest shows better accuracy score than the random classifier (uniform predictions) and the classifier that always predicts the minority class (constant1). The accuracy score of the random forest is 0.851, for the uniform predictor is 0.542, majority predictor is 0.877 and for the minority predictor is 0.123.
+        } \label{fig:dummies}
+\end{figure}
+
+%Random forest is the most commonly used embedded method for feature selection. 
+%YS choose a final one!!
+The most important features as determined by the random forest are shown in figure \ref{fig:RF_selectorgini}. The importance of each feature in the tree is computed as how much it  contributes to decreasing the weighted impurity. The importance is the forest is the obtained by averaging the decrease in impurity over trees. The Gini importance of all the features in the model must sum 1, figure \ref{fig:RF_selectorgini} shows the Gini importance of the 15 most important features (1 in 10 rule).
+
+There is some overlap in the important features using the Gini importance method in random forest and the linear \emph{SelectKBest} method shown in Figure \ref{ENG_HeatmapTopF_chi2}. Since the approaches for feature selection are different -linear vs. non-linear- it is expected that the set of important features varies from one method to the other. However, there is subset of features that is retained as the 15 most important in both methods, namely, subjective cognitive decline (scd), years of schooling, body mass index (BMI), diet rich on sweets, age, relationship with friends and APOE. The subjective cognitive decline (scd) is the most important feature in both methods. Also of note, sleeping patters appear among the most important features in random forest but are not selected in the linear method. 
 
 \begin{figure}[!htb]
         \centering
         %\includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/rf_figu2}
-        \includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/importance_2019716171617}
-        \caption{Evaluation of the importance of features for conversion to MCI classification. The 14 features most informative are displayed in the x-axis, the y-axis shows the Gini coefficient. The black thin bars denote the inter-trees variability for a random forest implementation containing 1000 trees.} 
+        \includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/importance_201987153812}
+        \caption{Evaluation of the importance of features for conversion to MCI. The 15  features most informative are displayed in the x-axis, the y-axis shows the importance of each feature based on the Gini impurity described in Equation \ref{eq:gini}. The sum of the Gini importance of all the features in the model is equal to 1, the figure shows only the top 15 features.} 
         \label{fig:RF_selectorgini}
 \end{figure}
 
 \subsection{Permutation-based importance methods}
 % eli5, PDP, SHAP
+%https://towardsdatascience.com/explaining-feature-importance-by-example-of-a-random-forest-d9166011959e
 %Permutation SHAP
-Once we have obtained the most important features according to Gini score with the random forest, it is possible to go a step further and look at the specific effect in prediction for each important feature. 
-Partial Dependence Plots (PDP) separate out the effect of each feature on prediction. PDPs need a fitted model, in pour case the random forest with the hyperparameters tunned as described before. Figure \ref{fig:PDP-1D} shows the PDP of the four most important features. 
 
-%PDP one dimensional of soem of the most important features
-\begin{figure}[]
-    \centering
-    \begin{subfigure}[t]{0.49\textwidth}
-        \centering
-        \includegraphics[height=2.1in]{figures/inpaper/pdp_plot_nivel_educativo}
-        \caption{Partial Dependence Plot of the feature X. Having a scd of 6 increases the odds of convert to MCI, more than 6 does not affect the conversion scd of 3 seems to lower predictions.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.49\textwidth}
-        \centering
-        \includegraphics[height=2.1in]{figures/inpaper/pdp_plot_imc}
-        \caption{PDP.}
-    \end{subfigure}%\quad
+Feature importance can be assessed via permutation methods which in essence quantify the effect on model accuracy of randomly reshuffling each predictor variable. Permutation based importance methods is a reliable technique that do not do not suffer from the bias existing in Gini impurity which might inflate the importance of continuous and high-cardinality categorical variables.
+Furthermore, permutation-based importance is model agnostic because it doesn't rely on internal model parameters such as linear regression coefficients or hyperparameter tuning and measures of impurity \cite{breiman2001statistical}. 
+%This approach directly measures feature importance by observing how random re-shuffling (thus preserving the distribution of the variable) of each predictor influences model performance.
+However, removing each feature from the dataset to then re-train the estimator is computationally very intensive. 
+%Also, this procedure looks for what is important in the dataset while we are interested in the importance of the features for the trained model at hand.
+A more efficient approach (avoid retraining as many estimators as features) is instead of removing each feature and retrain a new estimator at each time, to replace each feature with random noise, that is, re-shuffle the feature values preserving the distribution.
+Figure \ref{fig:eli5} shows the output of the permutation importance algorithm which measures how score decreases when a random shuffled (break relationship between predictor and target). The most important feature again is subjective cognitive decline (scd). 
+The features colored in green indicate that, as expected, the predictions of the shuffle data are less accurate than the real data. The red colored, on the other hand, indicate that the predictions of the shuffle data happened to be more accurate than the real data. Although this may seem surprising (by introducing noise we get better predictions), the rationale is uncomplicated, random chance caused the predictions of the noisy data to be more accurate than the actual values because the features most likely do not contain information about the target feature and the improve in the accuracy is purely coincidental due to chance.
 
-    \begin{subfigure}[t]{0.49\textwidth}
+%https://www.kaggle.com/dansbecker/permutation-importance
+\begin{figure}[!htb]
         \centering
-        \includegraphics[keepaspectratio,height=2.1in]{figures/inpaper/pdp_plot_edad_visita1}
-        \caption{PDP.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.49\textwidth}
-        \centering
-        \includegraphics[keepaspectratio,height=2.1in]{figures/inpaper/pdp_plot_apoe.png}
-        \caption{PDP.}
-    \end{subfigure}%\quad
-    \caption{PDP for the 4 most important features. The y axis represents change in the prediction from what it would be predicted at the baseline (red discontinuous line. The blue shaded area indicates the level of confidence)The y axis is interpreted as change in the prediction from what it would be predicted at the baseline or leftmost value.
-    }
-    %\label{fig:PDP-1D}}
+        %\includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/rf_figu2}
+        \includegraphics[keepaspectratio, width=0.6\linewidth]{figures/inpaper/eli5-2}
+        \caption{Figure shows the the importance of the feature with the eli5 library \ref{eli5}. The most important features are at the top, and those at the bottom matter the least. The first column in each row shows how much model accuracy decreased with a random shuffling $\pm$ how the accuracy varied from one-reshuffling to the next. The most important feature is subjective cognitive decline (scd), followed by diet features(sweets and white fish), hours of sleep during the day and APOE. The rows in red show predictions of the shuffle data that happened to be more accurate than the real data. The rationale behind this is that random chance caused the predictions of the noisy data be more accurate, this indicates that the features do not contain information about the target feature.} 
+        \label{fig:eli5}
 \end{figure}
 
+%PDP
+Once we have studied the most important features according to the Gini score and analyzed the effect of random shuffling, it is possible, as discussed in Section \ref{}, to go a step further and look at the specific effect in prediction within the range of values of each feature.  
+Partial Dependence Plots (PDP) separate out the effect of each feature on prediction. Figure \ref{fig:PDP-1D} shows the PDP of the a selection of features.  The X-axis represents the range of values of the feature and the Y-axis shows changes in the prediction, positive values represent the contribution of the feature to the increase in the prediction (increase in the odds to convert to MCI) and negative values represent the contribution of the feature to the decrease the prediction (reduction in the odds to convert to MCI).
+For example, if $PDP(x=2)=0.1$ the feature X with value 2 increases $10\%$ the chances to convert to to MCI, by the same token, if $PDP(x=2)=-0.1$  
+the feature X with value 2 reduces the chances to convert to MCI $10\%$. The shaded area represent the standard deviation which is always 0 at the baseline point in the origin $(x=0, y=0)$.
 
-%PDP 2 dimensional of some of the most important features
-Partial Dependence Plots can also be two dimensional, that is, represent represent how predictions change in relation with the interactions between two features. Figure \ref{fig:PDP-2D}  
+%PDP one dimensional of some of the most important features
 \begin{figure}[]
     \centering
-    \begin{subfigure}[t]{0.48\textwidth}
+    \begin{subfigure}[t]{0.45\textwidth}
         \centering
-        \includegraphics[keepaspectratio,height=3.8in]{figures/inpaper/pdp_plot_pair_1}
-        \caption{PDP }
+        \includegraphics[height=1.8in]{figures/inpaper/pdp_plot_scd}
+        \caption{Partial Dependence Plot of the feature subjective cognitive decline (scd). Having a scd of 6 increases the odds of convert to MCI, more than 6 does not affect the conversion, scd of less than 6 seems to lower predictions to conversion to MCI.}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[t]{0.48\textwidth}
+    \begin{subfigure}[t]{0.45\textwidth}
         \centering
-        \includegraphics[keepaspectratio,height=3.8in]{figures/inpaper/pdp_plot_pair_2}
-        \caption{PDP.}
+        \includegraphics[height=1.8in]{figures/inpaper/pdp_plot_apoe.png}
+        \caption{Partial Dependence Plot of the feature APOE. Having both homozygotic or heterozygotic APOE increases the odds of convert to MCI, more than $10\%$ in the homozygotic $APOE=2$.}
     \end{subfigure}%\quad
+    
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[height=1.8in]{figures/inpaper/pdp_plot_sweets}
+        \caption{Partial Dependence Plot of the feature dietary habits including sweets. The plot shows that consumption of sweets tend the increase the change of converting to MCI monotonically.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[height=1.8in]{figures/inpaper/pdp_plot_white_fish}
+        \caption{Partial Dependence Plot of the feature dietary habits including white fish. The plot shows an observable though effect on white fish consumption and conversion to MCI only when x=3 (6,7 days /week of white fish consumption).}
+    \end{subfigure}%\quad
+\caption{Partial Dependence Plots (PDP) of four important variables identified using permutation (Figure \ref{eli5-2}). PDP allows to look inside the range of values of the variable and estimate the effect in the increase/decrease of conversion to MCI for specific values of the feature.}
 
-    \begin{subfigure}[t]{0.48\textwidth}
+\end{figure}
+
+    % \begin{subfigure}[t]{0.45\textwidth}
+    %     \centering
+    %     \includegraphics[height=2.1in]{figures/inpaper/pdp_plot_nb_children}
+    %     \caption{Partial Dependence Plot of the feature X. Having a scd of 6 increases the odds of convert to MCI, more than 6 does not affect the conversion scd of 3 seems to lower predictions.}
+    % \end{subfigure}
+    % \hfill
+    % \begin{subfigure}[t]{0.45\textwidth}
+    %     \centering
+    %     \includegraphics[height=2.1in]{figures/inpaper/pdp_plot_bmi}
+    %     \caption{PDP.}
+    % \end{subfigure}%\quad
+    % \hfill
+    % \begin{subfigure}[t]{0.49\textwidth}
+    %     \centering
+    %     \includegraphics[keepaspectratio,height=2.1in]{figures/inpaper/pdp_plot_years_of_schooling}
+    %     \caption{PDP.}
+    % \end{subfigure}
+    
+    % \begin{subfigure}[t]{0.49\textwidth}
+    %     \centering
+    %     \includegraphics[keepaspectratio,height=2.1in]{figures/inpaper/pdp_plot_apoe.png}
+    %     \caption{PDP.}
+    % \end{subfigure}%\quad
+    % \caption{PDP for the 4 most important features. The y axis represents change in the prediction from what it would be predicted at the baseline (red discontinuous line. The blue shaded area indicates the level of confidence)The y axis is interpreted as change in the prediction from what it would be predicted at the baseline or leftmost value.
+    % }
+    % %\label{fig:PDP-1D}}
+
+%PDP 2 dimensional of some of the most important features
+Partial Dependence Plots can also be two dimensional, that is, represent how predictions change in relation with the interactions between two features. Figure \ref{fig:PDP-2D}  
+
+
+\begin{figure}[!htb]
         \centering
-        \includegraphics[keepaspectratio,height=3.8in]{figures/inpaper/pdp_plot_pair_3}
-        \caption{PDP.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[keepaspectratio,height=3.8in]{figures/inpaper/pdp_plot_pair_4}
-        \caption{PDP.}
-    \end{subfigure}%\quad
-    \caption{PDP in 2 dimensions showing predictions for any combination of 2 features. We see the highest predictions when a team scores at least 1 goal and they run a total distance close to 100km. If they score 0 goals, distance covered doesn't matter.
-}
-    %\label{fig:PDP-1D}}
+        %\includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/rf_figu2}
+        \includegraphics[keepaspectratio, width=0.6\linewidth]{figures/inpaper/pdp_plot_pair_age_y1_apoe}
+        \caption{Two dimensional PDP of features age (X-axis) and APOE (Y-axis) studying the effect on the predictions for any combination of the 2 features. The highest predictions is when APOE is 2 and the age of the subject is in the second quartile. Interestingly, the third quartile shows a reduction in conversion probably due to the survival bias introduced by the drop out in the population. We measure only those subjects that continue participating in the project but not those that drop the study.} 
+        \label{fig:PDP-2D}
 \end{figure}
 
 %SHAP summary plots give us a birds-eye view of feature importance and what is driving it. SHAP (SHapley Additive exPlanations) is a unified approach to explain the output of any machine learning model. SHAP connects game theory with local explanations, uniting several previous methods [1-7] and representing the only possible consistent and locally accurate additive feature attribution method based on expectations.
 %Shap values show how much a given feature changed our prediction (compared to if we made that prediction at some baseline value of that feature).Shap values allow us to decompose any prediction into the sum of effects of each feature value yielding a graph like the "force". SHAP Dependence Contribution Plots: We use the Shapley value to analyze the predictions of a random forest model predicting conversion to MCI:We are interested in how each feature affects the prediction of a data point. Feature contributions can be negativeThe Shapley value is a solution for computing feature contributions for single predictions for any machine learning model.The feature value is the numerical or categorical value of a feature and instance; the Shapley value is the feature contribution to the prediction; All possible coalitions (sets) of feature values have to be evaluated with and without the j-th feature to calculate the exact Shapley value. For more than a few features, the exact solution to this problem becomes problematic as the number of possible coalitions exponentially increases as more features are added. Strumbelj et al. (2014)40 propose an approximation with Monte-Carlo sampling:The Shapley value might be the only method to deliver a full explanation. In situations where the law requires explainability – like EU’s “right to explanations” – the Shapley value might be the only legally compliant method, because it is based on a solid theory and distributes the effects fairly. I am not a lawyer, so this reflects only my intuition about the requirements.The Shapley value is the only explanation method with a solid theory. The axioms – efficiency, symmetry, dummy, additivity – give the explanation a reasonable foundation
+Figure \ref{fig:SHAPbar}
+
+
+\begin{figure}[!htb]
+        \centering
+        %\includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/rf_figu2}
+        \includegraphics[keepaspectratio, width=0.8\linewidth]{figures/inpaper/shap_vals_bar}
+        \caption{SHAP.} 
+        \label{fig:SHAPbar}
+\end{figure}
+
+\begin{figure}[!htb]
+        \centering
+        %\includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/rf_figu2}
+        \includegraphics[keepaspectratio, width=1.1\linewidth]{figures/inpaper/shap_vals_force}
+        \caption{SHAP.} 
+        \label{fig:SHAPbar2}
+\end{figure}
+
+\begin{figure}[!htb]
+        \centering
+        %\includegraphics[keepaspectratio, width=\linewidth]{figures/inpaper/rf_figu2}
+        \includegraphics[keepaspectratio, width=1\linewidth]{figures/inpaper/shap_vals_mostimp}
+        \caption{SHAP.} 
+        \label{fig:SHAPbar3}
+\end{figure}
+
 
 
 \section{Discussion}

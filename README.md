@@ -1,9 +1,7 @@
 # Selecting the most important self-assessed features for predicting conversion to Mild Cognitive Impairment with Random Forest and Permutation-based method
 
-
 Code examples and other supplementary material for the paper:
 
-Sebastian Böck, Matthew E.P. Davies, Peter Knees
 Jaime Gómez-Ramírez, Marina Ávila-Villanueva, Miguel Ángel Fernández-Blázquez, "Selecting the most important self-assessed features for predicting conversion to Mild Cognitive Impairment with Random Forest and Permutation-based method".
 
 This repository contains:

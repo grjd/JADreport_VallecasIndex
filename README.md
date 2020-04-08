@@ -1,4 +1,4 @@
-# Selecting the most important self-assessed features for predicting conversion to Mild Cognitive Impairment with Random Forest and Permutation-based method
+# Selecting the most important self-assessed features for predicting conversion to Mild Cognitive Impairment with Random Forest and Permutation-based methods
 
 Code examples and other supplementary material for the paper:
 

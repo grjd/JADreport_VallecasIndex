@@ -3,7 +3,7 @@
 This repository contains the code and the supplementary material of the paper of the paper:
 
 Jaime Gómez-Ramírez, Marina Ávila-Villanueva, Miguel Ángel Fernández-Blázquez, **"Selecting the most important self-assessed features for predicting conversion to Mild Cognitive Impairment with Random Forest and Permutation-based method"**.
-**Abstract
+**Abstract**
 *Alzheimer’s Disease (AD) is a complex, multifactorial and comorbid condition. The asymptomatic behavior in the early stages makes the identification of the disease onset particularly challenging.
 Mild cognitive impairment (MCI) is an intermediary stage between the expected decline of normal aging and the pathological decline associated with dementia. The identification of risk factors for MCI is thus sorely needed. 
 Self-reported personal information such as age, education, income level, sleep, diet, physical exercise, etc. are called to play a key role not only in the early identification of MCI but also in the design of personalized interventions and the promotion of patients empowerment. 

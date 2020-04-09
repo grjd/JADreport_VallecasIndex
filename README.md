@@ -36,3 +36,4 @@ The code relies on the following python3.X+ libs:
 import paper
 paper.main() 
 ```
+Select a seed for reproducibility `np.random.seed(42)`

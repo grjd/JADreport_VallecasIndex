@@ -38,3 +38,29 @@ paper.main()
 ```
 Select a seed for reproducibility `np.random.seed(42)`. Declare in `csv_path` the dataset. The csv file pvix_shufs.csv contains a shuffled truncated version. For those who also like to have the complete dataset clone the repository and contact the developers, the eamil email address in the Git log.
 
+Perform the first feature selection method implemented in the paper _feature_selection_filtering_
+```python
+# X Input features
+# y Target feature 
+# oneintenrule N top features 
+oneintenrule = 10
+selector, covmatrix = feature_selection_filtering(X, y, oneintenrule)
+```
+Build _Random Forest Classifer_ using Cross Validation, either grid search or random search can be used.
+```python
+# X Input features
+test_size = 0.20 
+# split data set in training and test sets in proportion test_size = 0.20 
+X_train, X_test, y_train, y_test = split_training_test_sets(X+y, y.name, test_size)
+grid_search = Run_GridSearchCV(X_train, y_train)
+# Select the best estimator in the cross validation
+rf = grid_search.best_estimator_
+# Select the most important features in the Random Forest
+feature_top_names = select_important_features_fitted_RF(rf,X_train, oneintenrule)
+```
+Build permitation based methods: 
+* _ eli5_
+* _partial dependence plots_ and 
+* _Shap values_
+
+

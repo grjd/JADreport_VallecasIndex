@@ -64,23 +64,20 @@ feature_top_names = select_important_features_fitted_RF(rf,X_train, oneintenrule
 ```
 Build permitation based methods: 
 * _eli5_
-* _Partial Dependence Plots_ 
-* _Shap values_
-
 ```python
 # Feature importance with permutation using eli5 library
 # Args: model, X,y 
 # Output: sklearn.PermutationImportance object
 permutation_importance_eli5(model, X, y)
 ```
-
+* _Partial Dependence Plots_ 
 ```python
 # Creates partial dependence plots
 # Args: model, X
 # Output: 
-partial_dependence_plots(rf, X_train)
+partial_dependence_plots(model, X_train)
 ```
-
+* _Shap values_
 ```python
 # SHAP (SHapley Additive exPlanations) to explain the output of machine learning model.
 # SHAP values represent a feature's responsibility for a change in the model output
@@ -88,3 +85,7 @@ partial_dependence_plots(rf, X_train)
 # Output: shap values 
 shap_values = shap_explanations(model, X)
 ```
+
+
+
+

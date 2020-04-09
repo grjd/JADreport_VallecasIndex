@@ -36,4 +36,6 @@ The code relies on the following python3.X+ libs:
 import paper
 paper.main() 
 ```
-Select a seed for reproducibility `np.random.seed(42)`
+Select a seed for reproducibility `np.random.seed(42)`. Declare in `csv_path` the dataset, pvix_shufs.csv contains a shuffled truncated version. For those who also like to have the compelte dataset please thumbs-up so the developers can see the requests and 
+
+

@@ -35,8 +35,8 @@ The code relies on the following python3.X+ libs:
  ## Usage 
 To run an example with the specific described below: 
 ```python
-import paper
-paper.main() 
+import pvix_v2
+pvix_v2.py.main() 
 ```
 
 Select a seed for reproducibility `np.random.seed(42)`. 
